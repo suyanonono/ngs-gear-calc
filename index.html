@@ -119,10 +119,30 @@ html,body{overflow-x:hidden;max-width:100%;background:#0f1117;color:#e2e8f0;font
   .crit-row .crit-subsl{padding-left:0!important;border-left:none!important}
   .crit-row .crit-pct{margin-left:0!important;margin-top:4px}
 }
+.dd-modal-overlay{display:none;position:fixed;inset:0;background:#00000088;z-index:99990;align-items:flex-end}
+.dd-modal-overlay.open{display:flex}
+.dd-modal{background:#1e2535;border-radius:16px 16px 0 0;width:100%;max-height:80vh;display:flex;flex-direction:column;overflow:hidden}
+.dd-modal-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 8px;border-bottom:1px solid #334155}
+.dd-modal-title{font-size:13px;font-weight:500;color:#e2e8f0}
+.dd-modal-close{background:none;border:none;color:#64748b;font-size:18px;cursor:pointer;padding:0 4px;line-height:1}
 </style>
 </head>
 <body>
 <button id="back_top" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="display:none;position:fixed;bottom:20px;right:20px;z-index:9998;padding:8px 12px;border-radius:10px;border:1px solid #334155;background:#1e2535;color:#94a3b8;font-size:12px;cursor:pointer;box-shadow:0 2px 12px #00000066">▲ トップへ</button>
+<div id="dd_modal_overlay" class="dd-modal-overlay" onclick="onModalOverlayClick(event)">
+  <div class="dd-modal">
+    <div class="dd-modal-header">
+      <span class="dd-modal-title" id="dd_modal_title">能力を選択</span>
+      <button class="dd-modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="dd-search" style="padding:8px 10px;border-bottom:1px solid #334155">
+      <input id="dd_modal_srch" placeholder="検索..." oninput="filtModalDD()" autocomplete="off" style="width:100%;background:#0f1117;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:14px;padding:6px 8px;outline:none">
+    </div>
+    <div id="dd_modal_sort" class="dd-sort" style="padding:6px 10px;border-bottom:1px solid #334155;flex-wrap:wrap"></div>
+    <div class="sort-status" id="dd_modal_sort_status"></div>
+    <div id="dd_modal_list" class="dd-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
+  </div>
+</div>
 <div id="ex_tooltip" class="ex-tooltip">
   <div class="tt-name" id="tt_name"></div>
   <div class="tt-stats" id="tt_stats"></div>
@@ -596,9 +616,58 @@ var GEAR_SORTS={};
 function getGid(pid){return pid.replace(/_(?:af|ex)\d+$/,'');}
 function getSortKeys(pid){var gid=getGid(pid);if(!GEAR_SORTS[gid])GEAR_SORTS[gid]=[];return GEAR_SORTS[gid];}
 function setSortKeys(pid,keys){GEAR_SORTS[getGid(pid)]=keys;}
-function closeAll(){document.querySelectorAll('.dd-panel.open').forEach(function(p){p.classList.remove('open');p.previousElementSibling.classList.remove('open');});}
+var _modalPid=null;
+function openModal(pid){
+  _modalPid=pid;
+  var list=pid.indexOf('_ex')!==-1?EX_PRESETS:PRESETS;
+  var isEx=pid.indexOf('_ex')!==-1;
+  document.getElementById('dd_modal_title').textContent=isEx?'EX能力を選択':'能力を選択';
+  var srch=document.getElementById('dd_modal_srch');srch.value='';
+  var sortDiv=document.getElementById('dd_modal_sort');
+  sortDiv.innerHTML='<button class="ss" data-key="s" onclick="sortModalDD(\'s\')" type="button">打撃</button>'
+    +'<button class="sr" data-key="r" onclick="sortModalDD(\'r\')" type="button">射撃</button>'
+    +'<button class="st" data-key="t" onclick="sortModalDD(\'t\')" type="button">法撃</button>'
+    +'<button class="shp" data-key="hp" onclick="sortModalDD(\'hp\')" type="button">HP</button>'
+    +'<button class="spp" data-key="pp" onclick="sortModalDD(\'pp\')" type="button">PP</button>'
+    +'<button class="sfl" data-key="fl" onclick="sortModalDD(\'fl\')" type="button">下限</button>'
+    +'<button data-key="dr" onclick="sortModalDD(\'dr\')" type="button" style="color:#2aa8b8">耐性</button>'
+    +'<button data-key="pow" onclick="sortModalDD(\'pow\')" type="button" style="color:#f1a030;border-color:#f1a03044">火力</button>'
+    +'<button data-key="" onclick="sortModalDD(null)" type="button" style="color:#475569">元順</button>';
+  updateModalSortBtns();
+  document.getElementById('dd_modal_list').innerHTML=renderItems(pid,list,'');
+  document.getElementById('dd_modal_overlay').classList.add('open');
+  setTimeout(function(){srch.focus();},100);
+}
+function closeModal(){
+  document.getElementById('dd_modal_overlay').classList.remove('open');
+  _modalPid=null;
+}
+function onModalOverlayClick(e){if(e.target===document.getElementById('dd_modal_overlay'))closeModal();}
+function filtModalDD(){
+  if(!_modalPid)return;
+  var q=document.getElementById('dd_modal_srch').value;
+  var list=_modalPid.indexOf('_ex')!==-1?EX_PRESETS:PRESETS;
+  document.getElementById('dd_modal_list').innerHTML=renderItems(_modalPid,list,q);
+}
+function sortModalDD(key){if(!_modalPid)return;sortDD(_modalPid,key);updateModalSortBtns();filtModalDD();}
+function updateModalSortBtns(){
+  if(!_modalPid)return;
+  var keys=getSortKeys(_modalPid);
+  var sortDiv=document.getElementById('dd_modal_sort');
+  sortDiv.querySelectorAll('button[data-key]').forEach(function(b){
+    var k=b.dataset.key;if(!k){b.classList.remove('active');return;}
+    var rank=keys.indexOf(k);b.classList.toggle('active',rank!==-1);
+    b.textContent=rank!==-1?(KEY_NAMES[k]||k)+' '+(rank+1)+'位':(KEY_NAMES[k]||k);
+  });
+  var st=document.getElementById('dd_modal_sort_status');
+  if(st)st.textContent=keys.length?keys.map(function(k,i){return(i+1)+'位:'+(KEY_NAMES[k]||k);}).join(' → '):'';
+}
+function closeAll(){
+  document.querySelectorAll('.dd-panel.open').forEach(function(p){p.classList.remove('open');p.previousElementSibling.classList.remove('open');});
+  closeModal();
+}
 document.addEventListener('click',function(e){
-  if(!e.target.closest('.dd-wrap')){closeAll();hideTT();}
+  if(!e.target.closest('.dd-wrap')&&!e.target.closest('#dd_modal_overlay')){closeAll();hideTT();}
   if(!e.target.closest('#copy_btn')&&!e.target.closest('#copy_menu')){var m=document.getElementById('copy_menu');if(m)m.style.display='none';}
 });
 document.addEventListener('mouseover',function(e){
@@ -609,6 +678,22 @@ document.addEventListener('mouseover',function(e){
   if(!preset||preset.cat||preset.subcat||preset.n==='（なし）'){hideTT();return;}
   showTT(e,preset,isEx,pid);
 });
+function togDD(pid){
+  var isMobile=window.innerWidth<=600;
+  if(isMobile){closeAll();openModal(pid);return;}
+  var panel=document.getElementById(pid+'_panel'),btn=document.getElementById(pid+'_btn'),open=panel.classList.contains('open');
+  closeAll();
+  if(!open){
+    var rect=btn.getBoundingClientRect();
+    var panelH=480,spaceBelow=window.innerHeight-rect.bottom,spaceAbove=rect.top;
+    var goUp=spaceBelow<panelH&&spaceAbove>spaceBelow;
+    panel.style.left=rect.left+'px';panel.style.width=Math.max(rect.width,260)+'px';
+    if(goUp){panel.style.top='';panel.style.bottom=(window.innerHeight-rect.top)+'px';}
+    else{panel.style.bottom='';panel.style.top=rect.bottom+'px';}
+    panel.classList.add('open');btn.classList.add('open');
+    setTimeout(function(){updateSortBtns(pid);var s=document.getElementById(pid+'_srch');if(s){s.value='';s.focus();}filtDD(pid);},10);
+  }
+}
 function buildSortBtns(pid){
   return '<div class="dd-sort">'
     +'<button class="ss" data-key="s" onclick="sortDD(\''+pid+'\',\'s\')" type="button">打撃</button>'
