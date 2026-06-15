@@ -110,7 +110,15 @@ html,body{overflow-x:hidden;max-width:100%;background:#0f1117;color:#e2e8f0;font
 .ex-tooltip .tt-stats{margin-bottom:8px}
 .ex-tooltip .tt-body{font-size:12px;color:#cbd5e1;line-height:1.75;border-top:1px solid #ffffff22;padding-top:8px}
 .ex-tooltip .tt-body.no-border{border-top:none;padding-top:0}
-@media(max-width:400px){.hdr-btns{gap:4px}}
+@media(max-width:600px){
+  .hdr-btns{gap:4px}
+  .result-atk-grid{grid-template-columns:1fr!important}
+  .result-sub-grid{grid-template-columns:1fr!important}
+  .crit-row{flex-direction:column;align-items:flex-start!important}
+  .crit-row .crit-gear{padding-left:0!important;border-left:none!important;margin-top:4px}
+  .crit-row .crit-subsl{padding-left:0!important;border-left:none!important}
+  .crit-row .crit-pct{margin-left:0!important;margin-top:4px}
+}
 </style>
 </head>
 <body>
@@ -983,11 +991,11 @@ function buildDmgIndexHTML(tot){
     +'<div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;margin-top:2px">'
     +'<span style="font-size:11px;color:#a78bfa88">合計</span><span style="font-size:14px;font-weight:700;color:#a78bfa">×'+d.totalPowMul.toFixed(4)+'</span></div></div>'
     +'<div style="font-size:10px;font-weight:500;color:#475569;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">クリティカル率補正</div>'
-    +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#151a25;border:1px solid #1e2535;border-radius:8px">'
+    +'<div class="crit-row" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#151a25;border:1px solid #1e2535;border-radius:8px">'
     +'<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:#94a3b8;user-select:none">'
     +'<input type="checkbox" onchange="setTogSl(this)" '+(togSlState?'checked':'')+' style="width:14px;height:14px;accent-color:#a78bfa;cursor:pointer">'
     +'Sl <span style="color:#a78bfa;font-weight:600">+10%</span><span style="color:#334155;font-size:10px;margin-left:3px">常時5%+ボス5%</span></label>'
-    +'<div style="display:flex;align-items:center;gap:4px;padding-left:8px;border-left:1px solid #1e2535">'
+    +'<div class="crit-gear" style="display:flex;align-items:center;gap:4px;padding-left:8px;border-left:1px solid #1e2535">'
     +'<span style="font-size:11px;color:'+(togSlState?'#64748b':'#2a3547')+'">ギア</span>'
     +'<select onchange="setTogGear(this)" '+(togSlState?'':'disabled')+' style="background:#0f1117;border:1px solid #334155;border-radius:6px;color:'+(togSlState?'#a78bfa':'#2a3547')+';font-size:11px;padding:2px 4px;outline:none;cursor:'+(togSlState?'pointer':'not-allowed')+'">'
     +'<option value="0"'+(togGearState===0?' selected':'')+'>0段</option>'
@@ -997,10 +1005,10 @@ function buildDmgIndexHTML(tot){
     +'<option value="4"'+(togGearState===4?' selected':'')+'>4段+8%</option>'
     +'<option value="5"'+(togGearState===5?' selected':'')+'>5段+10%</option>'
     +'</select></div>'
-    +'<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:#94a3b8;user-select:none;padding-left:8px;border-left:1px solid #1e2535">'
+    +'<label class="crit-subsl" style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:#94a3b8;user-select:none;padding-left:8px;border-left:1px solid #1e2535">'
     +'<input type="checkbox" onchange="setTogSubSl(this)" '+(togSubSlState?'checked':'')+' style="width:14px;height:14px;accent-color:#a78bfa;cursor:pointer">'
     +'サブSl <span style="color:#a78bfa;font-weight:600">+5%</span><span style="color:#334155;font-size:10px;margin-left:3px">常時3%+ボス2%</span></label>'
-    +'<span style="margin-left:auto;font-size:11px;color:#64748b">クリ率 '+critPct+'%</span>'
+    +'<span class="crit-pct" style="margin-left:auto;font-size:11px;color:#64748b">クリ率 '+critPct+'%</span>'
     +'</div>'
     +'<div style="font-size:10px;font-weight:500;color:#475569;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">補正期待係数内訳</div>'
     +'<div style="background:#151a25;border:1px solid #1e2535;border-radius:8px;padding:8px 12px">'
@@ -1133,7 +1141,7 @@ function calc(){
   var flFin=flBase*flMul,drTaken=results.reduce(function(a,r){return a*r.dr;},1);
   tot.dr=1-drTaken;
   _lastTot=tot;
-  var srtHTML='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">'
+  var srtHTML='<div class="result-atk-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">'
     +['s','r','t'].map(function(k){
       var lbl={s:'打撃',r:'射撃',t:'法撃'}[k],col={s:'#ff6b2b',r:'#38bfff',t:'#ffe033'}[k];
       var bg={s:'#ff6b2b18',r:'#38bfff18',t:'#ffe03318'}[k],border={s:'#ff6b2b55',r:'#38bfff55',t:'#ffe03355'}[k];
@@ -1144,7 +1152,7 @@ function calc(){
     }).join('')+'</div>';
   var hpV=Math.round(tot.hp),ppV=Math.round(tot.pp);
   var hpColor=hpV>0?'#00ff88':hpV<0?'#f87171':'#334155',ppColor=ppV>0?'#00eeff':ppV<0?'#f87171':'#334155';
-  var subStatsHTML='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:8px">'
+  var subStatsHTML='<div class="result-sub-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:8px">'
     +'<div style="background:#00ff8818;border:1px solid #00ff8855;border-radius:10px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">'
     +'<span style="font-size:11px;color:#00ff8899;font-weight:500">HP</span>'
     +'<span style="font-size:24px;font-weight:700;color:'+hpColor+'">'+(hpV!==0?(hpV>0?'+':'')+hpV:'—')+'</span></div>'
