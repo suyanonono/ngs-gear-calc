@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{overflow-x:hidden;max-width:100%;background:#0f1117;color:#e2e8f0;font-family:sans-serif;font-size:14px;padding:.75rem;padding-bottom:60px;min-height:100vh}
+.app-header{margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:1px solid #1e2535;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.app-title{font-size:16px;font-weight:500;color:#f1f5f9}
+.app-sub{font-size:11px;color:#64748b;margin-top:2px}
+.hdr-btns{display:flex;gap:6px;align-items:center;flex-shrink:0;flex-wrap:wrap}
+.hdr-btn{padding:5px 12px;border-radius:8px;border:1px solid #334155;background:#1e2535;color:#94a3b8;font-size:12px;cursor:pointer}
+.slot-btn{padding:5px 12px;border-radius:8px;border:1px solid #334155;background:#1e2535;color:#94a3b8;font-size:12px;cursor:pointer}
+.slot-btn.active{color:#a78bfa;border-color:#7c3aed66;background:#7c3aed22}
+.tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+.tab-btn{padding:5px 12px;border-radius:8px;border:1px solid #1e2535;background:#151a25;color:#94a3b8;font-size:12px;cursor:pointer}
+.tab-btn.active.weapon{background:#7c3aed22;border-color:#7c3aed66;color:#a78bfa}
+.tab-btn.active.armor{background:#0369a122;border-color:#0369a166;color:#38bdf8}
+.tab-btn.active.ring{background:#10b98122;border-color:#10b98166;color:#34d399}
+.gear-panel{display:none}.gear-panel.active{display:block}
+.gear-card{background:#151a25;border:1px solid #1e2535;border-radius:14px;padding:1rem;margin-bottom:1rem}
+.gear-card.weapon-card{border-color:#7c3aed33}
+.gear-card.armor-card{border-color:#0369a133}
+.slabel{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:#475569;margin-bottom:6px}
+.sel-wrap{margin-bottom:.75rem;padding-bottom:.75rem;border-bottom:1px solid #1e2535}
+.sel-wrap label{font-size:10px;color:#64748b;display:block;margin-bottom:4px;font-weight:500;letter-spacing:.06em;text-transform:uppercase}
+.sel-wrap select{width:100%;background:#0f1117;border:1px solid #7c3aed44;border-radius:10px;color:#a78bfa;font-size:13px;padding:8px 10px;outline:none}
+.sel-wrap.armor-sel select{border-color:#0369a144;color:#38bdf8}
+.sel-wrap.armor-sel label{color:#0369a188}
+.stats-grid{display:grid;gap:6px;margin-bottom:.75rem}
+.stat-box{background:#0f1117;border:1px solid #1e2535;border-radius:10px;padding:6px 8px;display:flex;flex-direction:column;gap:2px}
+.stat-box label{font-size:9px;font-weight:500;letter-spacing:.06em}
+.stat-box .iw{display:flex;align-items:center;gap:2px}
+.stat-box input{background:transparent;border:none;outline:none;font-size:14px;font-weight:500;width:100%;padding:0;color:#f1f5f9}
+.stat-box .unit{font-size:10px;color:#475569}
+.affixes-wrap{border-top:1px solid #1e2535;padding-top:.75rem;margin-top:.5rem}
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%}
+.affix-tbl{border-collapse:collapse;width:100%;min-width:660px;table-layout:fixed}
+.affix-tbl.ex-tbl{min-width:720px}
+.affix-tbl th{font-size:9px;color:#334155;font-weight:400;padding:2px 3px;text-align:center;white-space:nowrap}
+.affix-tbl th:first-child{text-align:left}
+.affix-tbl td{padding:2px 3px;vertical-align:middle}
+.affix-tbl td input[type="number"]{width:100%;background:#0f1117;border:1px solid #1e2535;border-radius:6px;color:#94a3b8;font-size:11px;padding:4px 3px;outline:none;text-align:right}
+.affix-tbl td input.col-s{color:#c97a50;background:#fb923c09}
+.affix-tbl td input.col-r{color:#5a8ab8;background:#60a5fa09}
+.affix-tbl td input.col-t{color:#b8a840;background:#fde04709}
+.affix-tbl td input.col-hp{color:#3aa87e;background:#34d39909}
+.affix-tbl td input.col-pp{color:#2aa8b8;background:#22d3ee09}
+.affix-tbl td input.col-fl{color:#c07828;background:#f5953309}
+.affix-tbl td input.col-dr{color:#2aa8b8;background:#22d3ee09}
+.affix-tbl td input.col-td{color:#8870c8;background:#a78bfa09}
+.affix-tbl td.cell-s{background:#fb923c06}.affix-tbl td.cell-r{background:#60a5fa06}
+.affix-tbl td.cell-t{background:#fde04706}.affix-tbl td.cell-hp{background:#34d39906}
+.affix-tbl td.cell-pp{background:#22d3ee06}.affix-tbl td.cell-fl{background:#f5953306}
+.affix-tbl td.cell-dr{background:#22d3ee06}.affix-tbl td.cell-td{background:#a78bfa06}
+.affix-tbl td.sub-cell select{width:100%;background:#0f1117;border:1px solid #e0508044;border-radius:6px;color:#e05080;font-size:11px;padding:4px 2px;outline:none}
+.dd-wrap{position:relative}
+.dd-btn{width:100%;background:#0f1117;border:1px solid #1e2535;border-radius:6px;color:#e2e8f0;font-size:11px;padding:4px 6px;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;outline:none}
+.dd-btn.open{border-color:#475569}
+.dd-panel{display:none;position:fixed;width:260px;background:#1e2535;border:1px solid #334155;border-radius:0 0 10px 10px;z-index:9999;max-height:480px;overflow:hidden;flex-direction:column}
+.dd-panel.open{display:flex}
+.dd-search{padding:5px 6px;border-bottom:1px solid #334155}
+.dd-search input{width:100%;background:#0f1117;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:12px;padding:4px 6px;outline:none}
+.dd-sort{display:flex;gap:3px;padding:4px 6px;border-bottom:1px solid #334155;flex-wrap:wrap}
+.dd-sort button{padding:2px 6px;border-radius:4px;border:1px solid #334155;background:#0f1117;font-size:10px;cursor:pointer;color:#64748b}
+.dd-sort button.active{border-color:currentColor;background:#ffffff18}
+.dd-sort button.ss{color:#c97a50}.dd-sort button.sr{color:#5a8ab8}.dd-sort button.st{color:#b8a840}
+.dd-sort button.shp{color:#3aa87e}.dd-sort button.spp{color:#2aa8b8}.dd-sort button.sfl{color:#c07828}
+.sort-status{font-size:10px;color:#475569;padding:2px 8px 4px;min-height:14px;border-bottom:1px solid #1e2535}
+.dd-list{overflow-y:auto;flex:1}
+.dd-item{padding:5px 10px;font-size:12px;cursor:pointer;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dd-item:hover{background:#334155}
+.dd-item.cat{color:#475569;font-size:10px;cursor:default;padding:3px 8px;background:#151a25}
+.dd-item.subcat{font-size:10px;cursor:default;padding:3px 8px 3px 12px;display:flex;align-items:center;gap:6px;color:#64748b;margin-top:2px}
+.dd-item.subcat::before{content:'';display:inline-block;width:3px;height:10px;border-radius:2px;flex-shrink:0}
+.dd-item.none-item{color:#64748b}
+.dd-item.disabled{color:#2a3547;cursor:default;pointer-events:none}
+.dd-item.disabled:hover{background:transparent}
+.ex-wrap{border-top:1px solid #e0508066;background:#e0508022;border-radius:10px;padding:.75rem;margin-top:.75rem}
+.ex-label{font-size:10px;font-weight:500;letter-spacing:.07em;color:#e0508088;text-transform:uppercase}
+.hint{font-size:10px;color:#475569;margin-bottom:5px}
+.warn{display:none;font-size:11px;font-weight:500;color:#f87171;background:#f8717122;border:1px solid #f8717144;border-radius:6px;padding:3px 8px;margin-bottom:5px}
+.result-card{background:#151a25;border:1px solid #1e2535;border-radius:14px;padding:1rem;margin-top:1rem}
+.result-title{font-size:14px;font-weight:500;color:#f1f5f9;margin-bottom:.75rem}
+.sp-box{border-radius:10px;padding:10px 12px;display:flex;align-items:center}
+.sp-box.fl{background:#fb923c11;border:1px solid #fb923c33;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.sp-box.dr{background:#22d3ee11;border:1px solid #22d3ee33;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.sp-label{font-size:11px}
+.sp-box.fl .sp-label{color:#fb923c88}
+.sp-box.dr .sp-label{color:#22d3ee88}
+.sp-sub{font-size:10px;color:#64748b;margin-top:2px}
+.sp-val{font-size:18px;font-weight:500;text-align:right}
+.sp-box.fl .sp-val{color:#fb923c}
+.sp-box.dr .sp-val{color:#22d3ee}
+.sp-unit{font-size:12px;margin-left:2px;opacity:.5}
+.ref-card{background:#151a25;border:1px solid #334155;border-radius:14px;padding:1rem;margin-top:8px}
+.ref-title{font-size:13px;font-weight:500;color:#64748b;margin-bottom:4px}
+.ref-note{font-size:11px;color:#334155;margin-bottom:8px}
+.ex-tooltip{position:fixed;z-index:99999;width:260px;background:#1a0f1f;border:1px solid #e0508066;border-radius:10px;padding:12px;pointer-events:none;display:none;box-shadow:0 4px 24px #00000088;box-sizing:border-box}
+.ex-tooltip .tt-name{font-size:13px;font-weight:700;margin-bottom:8px}
+.ex-tooltip .tt-stats{margin-bottom:8px}
+.ex-tooltip .tt-body{font-size:12px;color:#cbd5e1;line-height:1.75;border-top:1px solid #ffffff22;padding-top:8px}
+.ex-tooltip .tt-body.no-border{border-top:none;padding-top:0}
+@media(max-width:400px){.hdr-btns{gap:4px}}
+</style>
+</head>
+<body>
+<button id="back_top" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="display:none;position:fixed;bottom:20px;right:20px;z-index:9998;padding:8px 12px;border-radius:10px;border:1px solid #334155;background:#1e2535;color:#94a3b8;font-size:12px;cursor:pointer;box-shadow:0 2px 12px #00000066">▲ トップへ</button>
+<div id="ex_tooltip" class="ex-tooltip">
+  <div class="tt-name" id="tt_name"></div>
+  <div class="tt-stats" id="tt_stats"></div>
+  <div class="tt-body" id="tt_body"></div>
+</div>
+<div class="app-header">
+  <div>
+    <div class="app-title">PSO2NGS ステータスシミュレーター</div>
+    <div class="app-sub">スロット1〜3で構成を切替 / 保存・読込で記録 / コピーで他スロットに複製</div>
+  </div>
+  <div class="hdr-right">
+    <div class="hdr-btns">
+      <button id="slot_btn_0" class="slot-btn active" onclick="selectSlot(0)">1</button>
+      <button id="slot_btn_1" class="slot-btn" onclick="selectSlot(1)">2</button>
+      <button id="slot_btn_2" class="slot-btn" onclick="selectSlot(2)">3</button>
+      <button class="hdr-btn" onclick="doSave()">保存</button>
+      <button class="hdr-btn" onclick="doLoad()">読込</button>
+      <div style="position:relative;display:inline-block">
+        <button class="hdr-btn" id="copy_btn" onclick="togCopyMenu()">コピー▾</button>
+        <div id="copy_menu" style="display:none;position:absolute;top:100%;left:0;margin-top:4px;background:#1e2535;border:1px solid #334155;border-radius:8px;z-index:9999;min-width:140px;overflow:hidden;box-shadow:0 4px 16px #00000066">
+          <div style="font-size:10px;color:#475569;padding:6px 12px 4px;border-bottom:1px solid #1e2535">コピー先を選択</div>
+          <div id="copy_menu_items"></div>
+        </div>
+      </div>
+      <button class="hdr-btn" onclick="resetState()" style="color:#f87171;border-color:#f8717144">初期化</button>
+    </div>
+    <span id="save_msg" style="font-size:11px;color:#64748b;display:block;height:16px;line-height:16px"></span>
+  </div>
+</div>
+<div class="tabs" id="tabs"></div>
+<div id="panels"></div>
+<div id="result"></div>
+
+<script>
+var togSlState=false,togGearState=0,togSubSlState=false,togExCond=false,togRingCond=false;
+var showSlotCompare=false;
+var _lastTot={s:1,r:1,t:1};
+var _exCondMul=1,_ringCondMul=1;
+
+// ==================== localStorage wrapper ====================
+var storage={
+  set:function(k,v){try{localStorage.setItem(k,v);return true;}catch(e){return false;}},
+  get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}},
+};
+
+var WEAPONS=[
+  {n:"（武器を選択）",fl:0,latent:"",latentEff:"",critBonus:0,atk:0,latentPow:0},
+  {n:"【LG4】レクシオ",fl:50,latent:"追輝の型 Lv6",latentEff:"威力+62% / エネミーに250,000ダメージを与えたとき自身とパーティメンバーに追加攻撃を1つストック（最大4つ）リキャスト5秒 / エネミーに攻撃命中時ストックを1つ消費して追加攻撃を行いHPを2%回復 / 追加攻撃が4回発生時15秒間クリティカル威力+5%",critBonus:0,atk:1573,latentPow:62},
+  {n:"【★15】コウゲンセイ",fl:50,latent:"幽豪の型 Lv6",latentEff:"威力+58% / クリティカル発生率+5%／PP消費量軽減+10%／ダメージ耐性+10%",critBonus:5,atk:1563,latentPow:58},
+  {n:"【★14】アルセ",fl:50,latent:"気降の型 Lv6",latentEff:"威力+63% / PP消費量増加+50%／PPを250消費するたび最大PP+50、最大PPは500まで増加 / 最大PPに応じて以下の効果が追加：PP300以上：攻撃時PBゲージ増加+20%／PP400以上：PB発動時HP回復+50%／PP500以上：PB使用時間短縮10%",critBonus:0,atk:1478,latentPow:63},
+  {n:"【★14】アルバラディオ",fl:50,latent:"秘樹の型・極式 Lv6",latentEff:"威力+60% / クリティカル発生率+5%／PP消費量軽減+10%／ダメージ耐性+10%／10秒ごとにHPを4%回復、装備から10秒後に効果発動",critBonus:5,atk:1478,latentPow:60}
+];
+var ARMORS=[
+  {n:"（防具を選択）",s:0,r:0,t:0,hp:0,pp:0,dr:0},
+  {n:"【★14】エヴァルトアーマ",s:8.2,r:8.2,t:8.2,hp:80,pp:8,dr:0},
+  {n:"【★14】ベルフェスアーマ・ヴィオ",s:8,r:8,t:8,hp:0,pp:25,dr:2},
+  {n:"【★14】ベルフェスアーマ",s:8,r:8,t:8,hp:90,pp:7,dr:2},
+  {n:"【★13】フォルタスアーマ",s:7.5,r:7.5,t:7.5,hp:60,pp:6,dr:0}
+];
+var EX_SUB=[
+  {n:"—",hp:0,pp:0,dr:0,td:0},{n:"H",hp:25,pp:0,dr:0,td:0},{n:"P",hp:0,pp:3,dr:0,td:0},
+  {n:"X",hp:15,pp:2,dr:0,td:0},{n:"D",hp:0,pp:0,dr:1,td:0},{n:"R",hp:0,pp:0,dr:0,td:5}
+];
+var RING_TYPE1=[
+  {n:"（なし）",eff:[""],pow:[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]]},
+  {n:"タイプ1/キリングライズ",eff:["ボス以外のエネミーへの威力+2.00%／自身の周囲でエネミーを撃破時30秒間、威力+1.00%","ボス以外のエネミーへの威力+2.50%／自身の周囲でエネミーを撃破時30秒間、威力+1.50%","ボス以外のエネミーへの威力+3.00%／自身の周囲でエネミーを撃破時30秒間、威力+2.00%","ボス以外のエネミーへの威力+3.50%／自身の周囲でエネミーを撃破時30秒間、威力+2.50%","ボス以外のエネミーへの威力+3.75%／自身の周囲でエネミーを撃破時30秒間、威力+2.75%","ボス以外のエネミーへの威力+4.00%／自身の周囲でエネミーを撃破時30秒間、威力+3.00%"],pow:[[2.00,1.00],[2.50,1.50],[3.00,2.00],[3.50,2.50],[3.75,2.75],[4.00,3.00]]},
+  {n:"タイプ1/スウィッシュライズ",eff:["ボスエネミーへの威力+2.00%／ステップや武器アクションなどによる攻撃の無効化時 20秒間、威力+1.00%","ボスエネミーへの威力+2.50%／ステップや武器アクションなどによる攻撃の無効化時 20秒間、威力+1.50%","ボスエネミーへの威力+3.00%／ステップや武器アクションなどによる攻撃の無効化時 20秒間、威力+2.00%","ボスエネミーへの威力+3.50%／ステップや武器アクションなどによる攻撃の無効化時 20秒間、威力+2.50%","ボスエネミーへの威力+3.75%／ステップや武器アクションなどによる攻撃の無効化時 20秒間、威力+2.75%","ボスエネミーへの威力+4.00%／ステップや武器アクションなどによる攻撃の無効化時 20秒間、威力+3.00%"],pow:[[2.00,1.00],[2.50,1.50],[3.00,2.00],[3.50,2.50],[3.75,2.75],[4.00,3.00]]},
+  {n:"タイプ1/HPキープライズ",eff:["HP残量が多いほど威力が上昇、最大+3.00%／20秒ごとにHPを1.00%回復","HP残量が多いほど威力が上昇、最大+4.00%／20秒ごとにHPを2.00%回復","HP残量が多いほど威力が上昇、最大+5.00%／20秒ごとにHPを3.00%回復","HP残量が多いほど威力が上昇、最大+6.00%／20秒ごとにHPを4.00%回復","HP残量が多いほど威力が上昇、最大+6.50%／20秒ごとにHPを4.50%回復","HP残量が多いほど威力が上昇、最大+7.00%／20秒ごとにHPを5.00%回復"],pow:[[3.00,0],[4.00,0],[5.00,0],[6.00,0],[6.50,0],[7.00,0]]},
+  {n:"タイプ1/アンダーPPライズ",eff:["PP消費量増加+20%、PAとテクニック威力+2.00%／PPが45%以下時に威力+2.00%","PP消費量増加+20%、PAとテクニック威力+2.50%／PPが50%以下時に威力+2.50%","PP消費量増加+20%、PAとテクニック威力+3.00%／PPが55%以下時に威力+3.00%","PP消費量増加+20%、PAとテクニック威力+3.50%／PPが60%以下時に威力+3.50%","PP消費量増加+20%、PAとテクニック威力+3.75%／PPが65%以下時に威力+3.75%","PP消費量増加+20%、PAとテクニック威力+4.00%／PPが70%以下時に威力+4.00%"],pow:[[2.00,2.00],[2.50,2.50],[3.00,3.00],[3.50,3.50],[3.75,3.75],[4.00,4.00]]},
+  {n:"タイプ1/ペイシェントライズ",eff:["HP減少時にPPを7%回復、リキャスト30秒／30秒間、威力+3.00%","HP減少時にPPを9%回復、リキャスト30秒／30秒間、威力+4.00%","HP減少時にPPを11%回復、リキャスト30秒／30秒間、威力+5.00%","HP減少時にPPを13%回復、リキャスト30秒／30秒間、威力+6.00%","HP減少時にPPを14%回復、リキャスト30秒／30秒間、威力+6.50%","HP減少時にPPを15%回復、リキャスト30秒／30秒間、威力+7.00%"],pow:[[0,3.00],[0,4.00],[0,5.00],[0,6.00],[0,6.50],[0,7.00]]},
+  {n:"タイプ1/ディフィートライズ",eff:["威力+3.00%／エネミーに与えるダウン値+2%／自身の周囲でエネミーがダウンした時 20秒間、威力+1%","威力+4.00%／エネミーに与えるダウン値+4%／自身の周囲でエネミーがダウンした時 20秒間、威力+1%","威力+5.00%／エネミーに与えるダウン値+6%／自身の周囲でエネミーがダウンした時 20秒間、威力+1%","威力+6.00%／エネミーに与えるダウン値+8%／自身の周囲でエネミーがダウンした時 20秒間、威力+1%","威力+6.50%／エネミーに与えるダウン値+9%／自身の周囲でエネミーがダウンした時 20秒間、威力+1%","威力+7.00%／エネミーに与えるダウン値+10%／自身の周囲でエネミーがダウンした時 20秒間、威力+1%"],pow:[[3.00,1.00],[4.00,1.00],[5.00,1.00],[6.00,1.00],[6.50,1.00],[7.00,1.00]]},
+  {n:"タイプ1/フォトンブラストライズ",eff:["威力+3.00%／フォトンブラスト発動後 90秒間、威力+1.00%","威力+3.50%／フォトンブラスト発動後 90秒間、威力+1.50%","威力+4.00%／フォトンブラスト発動後 90秒間、威力+2.00%","威力+4.50%／フォトンブラスト発動後 90秒間、威力+2.50%","威力+4.75%／フォトンブラスト発動後 90秒間、威力+2.75%","威力+5.00%／フォトンブラスト発動後 90秒間、威力+3.00%"],pow:[[3.00,1.00],[3.50,1.50],[4.00,2.00],[4.50,2.50],[4.75,2.75],[5.00,3.00]]},
+  {n:"タイプ1/カウントライズ",eff:["威力+2.00%／エネミーへの攻撃が30回命中した時 20秒間、威力+2.00%","威力+2.50%／エネミーへの攻撃が30回命中した時 20秒間、威力+2.50%","威力+3.00%／エネミーへの攻撃が30回命中した時 20秒間、威力+3.00%","威力+3.50%／エネミーへの攻撃が30回命中した時 20秒間、威力+3.50%","威力+3.75%／エネミーへの攻撃が30回命中した時 20秒間、威力+3.75%","威力+4.00%／エネミーへの攻撃が30回命中した時 20秒間、威力+4.00%"],pow:[[2.00,2.00],[2.50,2.50],[3.00,3.00],[3.50,3.50],[3.75,3.75],[4.00,4.00]]},
+  {n:"タイプ1/シンプルアタック",eff:["威力+3%（強化値+5固定）","威力+3%（強化値+5固定）","威力+3%（強化値+5固定）","威力+3%（強化値+5固定）","威力+3%（強化値+5固定）","威力+3%（強化値+5固定）"],pow:[[3.00,0],[3.00,0],[3.00,0],[3.00,0],[3.00,0],[3.00,0]]}
+];
+var RING_TYPE2=[
+  {n:"（なし）",eff:["","","","","",""]},
+  {n:"タイプ2/スウィッシュフォロー",eff:["ステップや武器アクションなどによる攻撃の無効化時 HPを1.00%回復、PPを2%回復、リキャスト10秒／20秒間、PP自然回復速度+7%","ステップや武器アクションなどによる攻撃の無効化時 HPを2.00%回復、PPを4%回復、リキャスト10秒／20秒間、PP自然回復速度+10%","ステップや武器アクションなどによる攻撃の無効化時 HPを3.00%回復、PPを6%回復、リキャスト10秒／20秒間、PP自然回復速度+13%","ステップや武器アクションなどによる攻撃の無効化時 HPを4.00%回復、PPを8%回復、リキャスト10秒／20秒間、PP自然回復速度+16%","ステップや武器アクションなどによる攻撃の無効化時 HPを4.50%回復、PPを9%回復、リキャスト10秒／20秒間、PP自然回復速度+18%","ステップや武器アクションなどによる攻撃の無効化時 HPを5.00%回復、PPを10%回復、リキャスト10秒／20秒間、PP自然回復速度+20%"]},
+  {n:"タイプ2/オーバーHPフォロー",eff:["HPが95%以上時に被ダメージ-3.00%／HPが95%以上時にエネミーの攻撃による打ち上げや吹き飛ばしを防ぐ","HPが95%以上時に被ダメージ-6.00%／HPが95%以上時にエネミーの攻撃による打ち上げや吹き飛ばしを防ぐ","HPが95%以上時に被ダメージ-9.00%／HPが95%以上時にエネミーの攻撃による打ち上げや吹き飛ばしを防ぐ","HPが95%以上時に被ダメージ-12.00%／HPが95%以上時にエネミーの攻撃による打ち上げや吹き飛ばしを防ぐ","HPが95%以上時に被ダメージ-13.50%／HPが95%以上時にエネミーの攻撃による打ち上げや吹き飛ばしを防ぐ","HPが95%以上時に被ダメージ-15.00%／HPが95%以上時にエネミーの攻撃による打ち上げや吹き飛ばしを防ぐ"]},
+  {n:"タイプ2/アンダーPPフォロー",eff:["PPが45%以下時に攻撃時PP回復量+7%／PPが20%以下時にPPを30%回復、リキャスト90秒","PPが50%以下時に攻撃時PP回復量+10%／PPが20%以下時にPPを30%回復、リキャスト80秒","PPが55%以下時に攻撃時PP回復量+13%／PPが20%以下時にPPを30%回復、リキャスト70秒","PPが60%以下時に攻撃時PP回復量+16%／PPが20%以下時にPPを30%回復、リキャスト60秒","PPが65%以下時に攻撃時PP回復量+18%／PPが20%以下時にPPを30%回復、リキャスト50秒","PPが70%以下時に攻撃時PP回復量+20%／PPが20%以下時にPPを30%回復、リキャスト45秒"]},
+  {n:"タイプ2/ペイシェントフォロー",eff:["HP減少時にHPを4%回復、リキャスト30秒／10秒間、被ダメージ-2%","HP減少時にHPを8%回復、リキャスト30秒／10秒間、被ダメージ-5%","HP減少時にHPを12%回復、リキャスト30秒／10秒間、被ダメージ-8%","HP減少時にHPを16%回復、リキャスト30秒／10秒間、被ダメージ-11%","HP減少時にHPを18%回復、リキャスト30秒／10秒間、被ダメージ-13%","HP減少時にHPを20%回復、リキャスト30秒／10秒間、被ダメージ-15%"]},
+  {n:"タイプ2/フォトンブラストフォロー",eff:["被ダメージ-1.00%／フォトンブラスト発動後、90秒間 攻撃時にフォトンブラストゲージ増加+7%","被ダメージ-2.00%／フォトンブラスト発動後、90秒間 攻撃時にフォトンブラストゲージ増加+10%","被ダメージ-3.00%／フォトンブラスト発動後、90秒間 攻撃時にフォトンブラストゲージ増加+13%","被ダメージ-4.00%／フォトンブラスト発動後、90秒間 攻撃時にフォトンブラストゲージ増加+16%","被ダメージ-4.50%／フォトンブラスト発動後、90秒間 攻撃時にフォトンブラストゲージ増加+18%","被ダメージ-5.00%／フォトンブラスト発動後、90秒間 攻撃時にフォトンブラストゲージ増加+20%"]},
+  {n:"タイプ2/カウントフォロー",eff:["エネミーに攻撃が30回命中した時 HPを1.00%回復、PPを4%回復、リキャスト10秒","エネミーに攻撃が30回命中した時 HPを2.00%回復、PPを8%回復、リキャスト10秒","エネミーに攻撃が30回命中した時 HPを3.00%回復、PPを12%回復、リキャスト10秒","エネミーに攻撃が30回命中した時 HPを4.00%回復、PPを16%回復、リキャスト10秒","エネミーに攻撃が30回命中した時 HPを4.50%回復、PPを18%回復、リキャスト10秒","エネミーに攻撃が30回命中した時 HPを5.00%回復、PPを20%回復、リキャスト10秒"]}
+];
+var FIXAS=[
+  {n:"（なし）",rows:[]},
+  {n:"フィクサ・アタック",rows:[{label:"威力+",vals:[8,9,9.5,9.75,10]}]},
+  {n:"フィクサ・テルミナ",rows:[{label:"クリティカル時の威力+",vals:[20,23,26,28,29]}]},
+  {n:"フィクサ・フェタル",rows:[{label:"クリティカル発生率+",vals:[20,23,25,27,28]}],critBonus:[20,23,25,27,28]},
+  {n:"フィクサ・ウィクス",rows:[{label:"威力+",vals:[2,2,2,2,2]},{label:"弱点部位への威力+",vals:[8,9,10,11,12],isCond:true}]},
+  {n:"フィクサ・アンウィクス",rows:[{label:"威力+",vals:[2,2,2,2,2]},{label:"非弱点部位への威力+",vals:[5,8,11,13,15],isCond:true}]},
+  {n:"フィクサ・ブラストル",rows:[{label:"威力+",vals:[7,8,8.5,8.75,9]},{label:"PB威力+",vals:[3,6,9,11,12]}]},
+  {n:"フィクサ・アバンダク",rows:[{label:"威力+",vals:[2,2,2,2,2]},{label:"_abandak",vals:[0.125,0.25,0.375,0.45,0.5],isCond:true}]}
+];
+var PRESETS=[
+  {n:"（なし）",s:0,r:0,t:0,hp:0,pp:0,fl:0,dr:0,td:0},
+  {n:"── 複合OP ──",cat:true},
+  {n:"ロイスハルフィニリア",s:6,r:6,t:6,hp:35,pp:7,fl:0,dr:0,td:0},
+  {n:"アトスハルフィニリア",s:6,r:6,t:6,hp:15,pp:10,fl:0,dr:0,td:0},
+  {n:"エルガグラディエ・ソール",s:5.75,r:5.75,t:5.75,hp:30,pp:8,fl:0,dr:0,td:0},
+  {n:"アトスグラディエ・ソール",s:5.75,r:5.75,t:5.75,hp:50,pp:5,fl:0,dr:0,td:0},
+  {n:"エルガギガス・マエスティ",s:5.75,r:5.75,t:5.75,hp:40,pp:0,fl:0,dr:0,td:0},
+  {n:"アトスギガス・マエスティ",s:5.75,r:5.75,t:5.75,hp:0,pp:5,fl:0,dr:0,td:0},
+  {n:"エルガドレド・キーパ",s:3.75,r:3.75,t:3.75,hp:50,pp:5,fl:7,dr:1,td:0},
+  {n:"アトスドレド・キーパ",s:3.75,r:3.75,t:3.75,hp:90,pp:0,fl:7,dr:1,td:0},
+  {n:"テルフィア・ドミナ",s:5,r:5,t:5,hp:45,pp:6,fl:3,dr:0,td:0},
+  {n:"テラドライエル",s:5.5,r:5.5,t:5.5,hp:0,pp:4,fl:0,dr:1,td:5},
+  {n:"── LC系 ──",cat:true},
+  {n:"ロイスハルフィニリア LC",s:5.5,r:5.5,t:5.5,hp:35,pp:7,fl:0,dr:0,td:0},
+  {n:"エルガグラディエ・ソール LC",s:5.5,r:5.5,t:5.5,hp:30,pp:8,fl:0,dr:0,td:0},
+  {n:"エルガギガス・マエスティ LC",s:5.5,r:5.5,t:5.5,hp:40,pp:0,fl:0,dr:0,td:0},
+  {n:"エルガドレド・キーパ LC",s:3.5,r:3.5,t:3.5,hp:50,pp:5,fl:7,dr:1,td:0},
+  {n:"テラドライエル LC",s:5.25,r:5.25,t:5.25,hp:0,pp:4,fl:0,dr:1,td:5},
+  {n:"テルフィア・ドミナ LC",s:4.75,r:4.75,t:4.75,hp:45,pp:6,fl:3,dr:0,td:0},
+  {n:"── MN系 ──",cat:true},
+  {n:"ロイスハルフィニリア MN",s:6.0,r:6.0,t:6.0,hp:-5,pp:3,fl:0,dr:0,td:0},
+  {n:"エルガギガス・マエスティ MN",s:5.75,r:5.75,t:5.75,hp:0,pp:-4,fl:0,dr:0,td:0},
+  {n:"エルガグラディエ・ソール MN",s:5.75,r:5.75,t:5.75,hp:-10,pp:4,fl:0,dr:0,td:0},
+  {n:"エルガドレド・キーパ MN",s:3.75,r:3.75,t:3.75,hp:10,pp:1,fl:7,dr:1,td:0},
+  {n:"テラドライエル MN",s:5.5,r:5.5,t:5.5,hp:-40,pp:0,fl:0,dr:1,td:5},
+  {n:"テルフィア・ドミナ MN",s:5.0,r:5.0,t:5.0,hp:5,pp:2,fl:3,dr:0,td:0},
+  {n:"── ユーゼ系 ──",cat:true},
+  {n:"バルフト系（全属性）",subcat:true,color:"#7c9e50"},
+  {n:"ユーゼ・スタムバルフト",s:7.5,r:7.5,t:7.5,hp:20,pp:0,fl:0,dr:0,td:0},
+  {n:"ユーゼ・スピレバルフト",s:7.5,r:7.5,t:7.5,hp:0,pp:6,fl:0,dr:0,td:0},
+  {n:"ユーゼ・スタピバルフト",s:7.5,r:7.5,t:7.5,hp:10,pp:3,fl:0,dr:0,td:0},
+  {n:"ユーゼ・アルムバルフト",s:7.5,r:7.5,t:7.5,hp:0,pp:0,fl:1.0,dr:0,td:0},
+  {n:"ユーゼ・ガーディバルフト",s:7.5,r:7.5,t:7.5,hp:0,pp:0,fl:0,dr:2.5,td:0},
+  {n:"ユーゼ・レジリバルフト",s:7.5,r:7.5,t:7.5,hp:0,pp:0,fl:0,dr:0,td:20},
+  {n:"アムダシャ系（打・射）",subcat:true,color:"#c97a50"},
+  {n:"ユーゼ・スタダシャ",s:7.5,r:7.5,t:0,hp:20,pp:0,fl:0,dr:0,td:0},
+  {n:"ユーゼ・スタピダシャ",s:7.5,r:7.5,t:0,hp:10,pp:3,fl:0,dr:0,td:0},
+  {n:"ユーゼ・スピダシャ",s:7.5,r:7.5,t:0,hp:0,pp:6,fl:0,dr:0,td:0},
+  {n:"ユーゼ・アムダシャ",s:7.5,r:7.5,t:0,hp:0,pp:0,fl:1.0,dr:0,td:0},
+  {n:"ユーゼ・ガディダシャ",s:7.5,r:7.5,t:0,hp:0,pp:0,fl:0,dr:2.5,td:0},
+  {n:"ユーゼ・レジダシャ",s:7.5,r:7.5,t:0,hp:0,pp:0,fl:0,dr:0,td:20},
+  {n:"アムダホウ系（打・法）",subcat:true,color:"#b8a840"},
+  {n:"ユーゼ・スタダホウ",s:7.5,r:0,t:7.5,hp:20,pp:0,fl:0,dr:0,td:0},
+  {n:"ユーゼ・スタピダホウ",s:7.5,r:0,t:7.5,hp:10,pp:3,fl:0,dr:0,td:0},
+  {n:"ユーゼ・スピダホウ",s:7.5,r:0,t:7.5,hp:0,pp:6,fl:0,dr:0,td:0},
+  {n:"ユーゼ・アムダホウ",s:7.5,r:0,t:7.5,hp:0,pp:0,fl:1.0,dr:0,td:0},
+  {n:"ユーゼ・ガディダホウ",s:7.5,r:0,t:7.5,hp:0,pp:0,fl:0,dr:2.5,td:0},
+  {n:"ユーゼ・レジダホウ",s:7.5,r:0,t:7.5,hp:0,pp:0,fl:0,dr:0,td:20},
+  {n:"アムシャホウ系（射・法）",subcat:true,color:"#5a8ab8"},
+  {n:"ユーゼ・スタシャホウ",s:0,r:7.5,t:7.5,hp:20,pp:0,fl:0,dr:0,td:0},
+  {n:"ユーゼ・スタピシャホウ",s:0,r:7.5,t:7.5,hp:10,pp:3,fl:0,dr:0,td:0},
+  {n:"ユーゼ・スピシャホウ",s:0,r:7.5,t:7.5,hp:0,pp:6,fl:0,dr:0,td:0},
+  {n:"ユーゼ・アムシャホウ",s:0,r:7.5,t:7.5,hp:0,pp:0,fl:1.0,dr:0,td:0},
+  {n:"ユーゼ・ガディシャホウ",s:0,r:7.5,t:7.5,hp:0,pp:0,fl:0,dr:2.5,td:0},
+  {n:"ユーゼ・レジシャホウ",s:0,r:7.5,t:7.5,hp:0,pp:0,fl:0,dr:0,td:20},
+  {n:"── ユディ系 ──",cat:true},
+  {n:"バルフト系（全属性）",subcat:true,color:"#7c9e50"},
+  {n:"ユディ・スタムバルフト",s:7.0,r:7.0,t:7.0,hp:20,pp:0,fl:4.0,dr:0,td:0},
+  {n:"ユディ・スピレバルフト",s:7.0,r:7.0,t:7.0,hp:0,pp:6,fl:4.0,dr:0,td:0},
+  {n:"ユディ・スタピバルフト",s:7.0,r:7.0,t:7.0,hp:10,pp:3,fl:4.0,dr:0,td:0},
+  {n:"ユディ・アルムバルフト",s:7.0,r:7.0,t:7.0,hp:0,pp:0,fl:5.0,dr:0,td:0},
+  {n:"ユディ・ガーディバルフト",s:7.0,r:7.0,t:7.0,hp:0,pp:0,fl:4.0,dr:2.5,td:0},
+  {n:"ユディ・レジリバルフト",s:7.0,r:7.0,t:7.0,hp:0,pp:0,fl:4.0,dr:0,td:20},
+  {n:"アムダシャ系（打・射）",subcat:true,color:"#c97a50"},
+  {n:"ユディ・スタダシャ",s:7.0,r:7.0,t:0,hp:20,pp:0,fl:4.0,dr:0,td:0},
+  {n:"ユディ・スタピダシャ",s:7.0,r:7.0,t:0,hp:10,pp:3,fl:4.0,dr:0,td:0},
+  {n:"ユディ・スピダシャ",s:7.0,r:7.0,t:0,hp:0,pp:6,fl:4.0,dr:0,td:0},
+  {n:"ユディ・アムダシャ",s:7.0,r:7.0,t:0,hp:0,pp:0,fl:5.0,dr:0,td:0},
+  {n:"ユディ・ガディダシャ",s:7.0,r:7.0,t:0,hp:0,pp:0,fl:4.0,dr:2.5,td:0},
+  {n:"ユディ・レジダシャ",s:7.0,r:7.0,t:0,hp:0,pp:0,fl:4.0,dr:0,td:20},
+  {n:"アムダホウ系（打・法）",subcat:true,color:"#b8a840"},
+  {n:"ユディ・スタダホウ",s:7.0,r:0,t:7.0,hp:20,pp:0,fl:4.0,dr:0,td:0},
+  {n:"ユディ・スタピダホウ",s:7.0,r:0,t:7.0,hp:10,pp:3,fl:4.0,dr:0,td:0},
+  {n:"ユディ・スピダホウ",s:7.0,r:0,t:7.0,hp:0,pp:6,fl:4.0,dr:0,td:0},
+  {n:"ユディ・アムダホウ",s:7.0,r:0,t:7.0,hp:0,pp:0,fl:5.0,dr:0,td:0},
+  {n:"ユディ・ガディダホウ",s:7.0,r:0,t:7.0,hp:0,pp:0,fl:4.0,dr:2.5,td:0},
+  {n:"ユディ・レジダホウ",s:7.0,r:0,t:7.0,hp:0,pp:0,fl:4.0,dr:0,td:20},
+  {n:"アムシャホウ系（射・法）",subcat:true,color:"#5a8ab8"},
+  {n:"ユディ・スタシャホウ",s:0,r:7.0,t:7.0,hp:20,pp:0,fl:4.0,dr:0,td:0},
+  {n:"ユディ・スタピシャホウ",s:0,r:7.0,t:7.0,hp:10,pp:3,fl:4.0,dr:0,td:0},
+  {n:"ユディ・スピシャホウ",s:0,r:7.0,t:7.0,hp:0,pp:6,fl:4.0,dr:0,td:0},
+  {n:"ユディ・アムシャホウ",s:0,r:7.0,t:7.0,hp:0,pp:0,fl:5.0,dr:0,td:0},
+  {n:"ユディ・ガディシャホウ",s:0,r:7.0,t:7.0,hp:0,pp:0,fl:4.0,dr:2.5,td:0},
+  {n:"ユディ・レジシャホウ",s:0,r:7.0,t:7.0,hp:0,pp:0,fl:4.0,dr:0,td:20}
+];
+var EX_PRESETS=[
+  {n:"（なし）",s:0,r:0,t:0,hp:0,pp:0,fl:0,dr:0,td:0},
+  {n:"── EX Ⅲ ──",cat:true},
+  {n:"EXウィークオンスロットⅢ",s:6.25,r:6.25,t:6.25,hp:0,pp:0,fl:2,dr:0,td:0,cond:"エネミーの弱点部位を攻撃または弱点属性で攻撃したとき威力+1.5%",condVal:1.5,maxPow:7.84},
+  {n:"EXウィークPBブーストⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"エネミーの弱点部位を攻撃または弱点属性で攻撃したときフォトンブラストゲージが2%増加、リキャスト10秒"},
+  {n:"EXテックアーツオンスロットⅢ",s:6.25,r:6.25,t:6.25,hp:0,pp:0,fl:2,dr:0,td:0,cond:"異なるPAやテクニックを使用すると20秒間、威力+1.5%",condVal:1.5,maxPow:7.84},
+  {n:"EXアヴォイドオンスロットⅢ",s:6.0,r:6.0,t:6.0,hp:0,pp:0,fl:2,dr:0,td:0,cond:"ステップや武器アクションなどによる攻撃の無効化に成功したとき威力+1%、最大+3%まで上昇、被ダメージ時リセット",condVal:3,maxPow:9.18},
+  {n:"EXペインラウズⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"最大HPの90%以上のダメージを受けたとき20秒間、威力+1.5%",condVal:1.5,maxPow:8.10},
+  {n:"EXショーテージPPセイブⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"PPが70%以下になったとき20秒間PP消費量軽減+25%、リキャスト時間10秒"},
+  {n:"EXコンシュームPPオンスロットⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"PP消費量増加+20、PPが70%以下の時、威力+2%",condVal:2,maxPow:8.63},
+  {n:"EXクリティカルフォローⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"通常攻撃時に追加攻撃が発生、この追加攻撃は常に数値として取り扱いダメージにならないクリティカルになる、リキャスト1秒"},
+  {n:"EXクリティカルインライヴンⅢ",s:6.25,r:6.25,t:6.25,hp:0,pp:0,fl:2,dr:0,td:0,cond:"通常攻撃でクリティカル発生時30秒間、威力+1.5%、この効果は重複しない",condVal:1.5,maxPow:7.84},
+  {n:"EXトライシールドフォローⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"HP回復量+10%、ダメージ耐性+5%、EXトライシールドの効果時間を10秒短縮"},
+  {n:"EXキープバランスⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"攻撃命中時HP50%以上の時、自身に最大HPの10%のダメージが発生、リキャスト1秒、HP49%以下時HP最大の1%回復、リキャスト0.5秒"},
+  {n:"EXブリングダウンPBブーストⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"自身の周囲でエネミーへの威力+2%、装備から10秒後に効果発動"},
+  {n:"EXアヴォイドHPゲインⅢ",s:6.25,r:6.25,t:6.25,hp:0,pp:0,fl:2,dr:0,td:0,cond:"ステップや武器アクションなどによる攻撃の無効化に成功したとき自身のHP0.1%回復、リキャスト10秒"},
+  {n:"EXターンオーバーⅢ",s:6.25,r:6.25,t:6.25,hp:0,pp:0,fl:2,dr:0,td:0,cond:"自身のHPが回復した後20秒間、威力+1.5%（HP最大でも発動）",condVal:1.5,maxPow:7.84},
+  {n:"EXエネミーダウンPPゲインⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"自身の周囲でエネミーがダウンしたとき最大PPを50%回復"},
+  {n:"EXエネミーフェルドPPゲインⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"自身の周囲のエネミーを撃破時、PP+10"},
+  {n:"EXエンデュアペインPBブーストⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"HP減少時フォトンブラストゲージが2%増加、リキャスト時間10秒"},
+  {n:"EXグラジュアリーPPゲインⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"5秒ごとにPPを10回復"},
+  {n:"EXグラジュアリーフレッシングⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"エネミーに与えるダウン値が10秒ごとに5%上昇、最大+20%まで上昇"},
+  {n:"EXサインシールディングⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"レスタサインやリバーサーサインを使用後に一度だけダメージ耐性+30%"},
+  {n:"EXシャストタイムカウンターⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"打ち上げや吹き飛ばしを受け身で防いだときに通常攻撃がヒットするとクリティカル発生"},
+  {n:"EXショーテージHPスターリングⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"HP50%以下の時、威力+1.5%、ダメージ耐性+30%",condVal:1.5,maxPow:8.10},
+  {n:"EXショーテージPPバーンアップⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"PPを100消費時自身にバーンが発生、バーン中PP自然回復速度+30%、バーンの威力低下効果を無効化"},
+  {n:"EXステルスウォールⅢ",s:6.0,r:6.0,t:6.0,hp:0,pp:0,fl:2,dr:0,td:0,cond:"自身を狙っているエネミーへのダメージ耐性+10%、自身を狙っていないエネミーへの威力+1.5%",condVal:1.5,maxPow:7.59},
+  {n:"EXダズルカムフラージュⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"エネミーに攻撃を当てても狙われにくくなる"},
+  {n:"EXタフマインドⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"残りHP以上のダメージを受けたとき自身のHP1割り1回まで復活、リキャスト300秒、装備から10秒後に効果発動"},
+  {n:"EXテックアーツPPサプレスⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"異なるPAやテクニックを使用時PP消費量軽減+25%"},
+  {n:"EXトライシールドⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"状態異常になったとき効果時間中シールドが3秒発生、全てのシールド消失後リキャスト120秒"},
+  {n:"EXヒステリカルストレングスⅢ",s:6.0,r:6.0,t:6.0,hp:0,pp:0,fl:2,dr:0,td:0,cond:"HP減少時に一時的HP回復量+10%、ダメージ耐性+10%"},
+  {n:"EXフォーチュンサインⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"レスタサインやリバーサーサインを使用後に20%の確率で消費しない、装備から10秒後に効果発動"},
+  {n:"EXフォルティチュードⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"PPが10%以下の時、威力+2%、リキャスト180秒、装備から10秒後に効果発動",condVal:2,maxPow:8.63},
+  {n:"EXペイシェントディフェンスⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"HP減少時にダメージ耐性+15%、最大+25%まで、ダメージを受けるほど上昇、上限到達後リセット"},
+  {n:"EXヘヴィアタックプロテクトⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"ボスエネミーへのダメージ耐性+15%"},
+  {n:"EXライトアタックプロテクトⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"ボス以外のエネミーへのダメージ耐性+30%"},
+  {n:"EXリスキースタンスⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"攻撃命中時30%の確率でPPを10回復、リキャスト5秒、10%の確率で自身に1ダメージ発生、リキャスト10秒"},
+  {n:"EXライブリーHPスターリングⅢ",s:6.5,r:6.5,t:6.5,hp:0,pp:0,fl:2,dr:0,td:0,cond:"HP95%以上の時、威力+1.5%、ダメージ耐性+5%",condVal:1.5,maxPow:7.59},
+  {n:"── EX A ──",cat:true},
+  {n:"EXターンオーバーA",s:6.25,r:6.25,t:6.25,hp:25,pp:3,fl:2,dr:0,td:0,cond:"自身のHPが回復した後20秒間、威力+1.5%（HP最大でも発動）",condVal:1.5,maxPow:7.84},
+  {n:"EXリスキースタンスA",s:6.50,r:6.50,t:6.50,hp:25,pp:3,fl:2,dr:0,td:0,cond:"攻撃命中時30%の確率でPPを10回復、リキャスト5秒、10%の確率で自身に1ダメージ発生、リキャスト10秒"},
+  {n:"EXショーテージPPバーンアップA",s:6.50,r:6.50,t:6.50,hp:25,pp:3,fl:2,dr:0,td:0,cond:"PPを100消費時自身にバーンが発生、バーン中PP自然回復速度+30%、バーンの威力低下効果を無効化"},
+  {n:"EXキープバランスA",s:6.50,r:6.50,t:6.50,hp:25,pp:3,fl:2,dr:0,td:0,cond:"攻撃命中時HP50%以上の時、自身に最大HPの10%のダメージが発生、リキャスト1秒、HP49%以下時HP最大の1%回復、リキャスト0.5秒"},
+  {n:"EXクリティカルインライヴンA",s:6.25,r:6.25,t:6.25,hp:25,pp:3,fl:2,dr:0,td:0,cond:"通常攻撃でクリティカル発生時30秒間、威力+1.5%、この効果は重複しない",condVal:1.5,maxPow:7.84},
+  {n:"EXヘヴィアタックプロテクトA",s:6.50,r:6.50,t:6.50,hp:25,pp:3,fl:2,dr:0,td:0,cond:"ボスエネミーへのダメージ耐性+15%"},
+  {n:"EXライトアタックプロテクトA",s:6.50,r:6.50,t:6.50,hp:25,pp:3,fl:2,dr:0,td:0,cond:"ボス以外のエネミーへのダメージ耐性+30%"},
+  {n:"EXテックアーツPPサプレスA",s:6.50,r:6.50,t:6.50,hp:25,pp:3,fl:2,dr:0,td:0,cond:"異なるPAやテクニックを使用時PP消費量軽減+25%"},
+  {n:"EXグラジュアリーフレッシングA",s:6.50,r:6.50,t:6.50,hp:25,pp:3,fl:2,dr:0,td:0,cond:"エネミーに与えるダウン値が10秒ごとに5%上昇、最大+20%まで上昇"}
+];
+var GEAR=[
+  {id:"weapon",label:"武器",isWeapon:true},
+  {id:"armor1",label:"ユニット①",isWeapon:false},
+  {id:"armor2",label:"ユニット②",isWeapon:false},
+  {id:"armor3",label:"ユニット③",isWeapon:false},
+  {id:"ring",label:"リング",isWeapon:false,isRing:true}
+];
+var ALL_STATS=[{k:"s",label:"打撃"},{k:"r",label:"射撃"},{k:"t",label:"法撃"},{k:"hp",label:"HP"},{k:"pp",label:"PP"},{k:"fl",label:"下限補正"},{k:"dr",label:"ダメージ耐性"},{k:"td",label:"全ダウン耐性"}];
+var WEAPON_BASE=[];
+var ARMOR_BASE=[{k:"s",label:"打撃"},{k:"r",label:"射撃"},{k:"t",label:"法撃"},{k:"hp",label:"HP"},{k:"pp",label:"PP"},{k:"dr",label:"ダメージ耐性"}];
+var sColors={s:"#fb923c",r:"#60a5fa",t:"#fde047",hp:"#34d399",pp:"#22d3ee"};
+var KEY_NAMES={'s':'打撃','r':'射撃','t':'法撃','hp':'HP','pp':'PP','fl':'下限','dr':'耐性','pow':'火力'};
+var KEY_COLORS={'s':'#c97a50','r':'#5a8ab8','t':'#b8a840','hp':'#3aa87e','pp':'#2aa8b8','fl':'#c07828','dr':'#2aa8b8'};
+var STAT_DEFS=[
+  {k:'s',label:'打撃',color:'#c97a50',bg:'#fb923c22',max:10},
+  {k:'r',label:'射撃',color:'#5a8ab8',bg:'#60a5fa22',max:10},
+  {k:'t',label:'法撃',color:'#b8a840',bg:'#fde04722',max:10},
+  {k:'hp',label:'HP',color:'#3aa87e',bg:'#34d39922',max:100},
+  {k:'pp',label:'PP',color:'#2aa8b8',bg:'#22d3ee22',max:25},
+  {k:'fl',label:'下限補正',color:'#c07828',bg:'#f5953322',max:10},
+  {k:'dr',label:'耐性',color:'#2aa8b8',bg:'#22d3ee22',max:5},
+  {k:'td',label:'全ダウン耐',color:'#8870c8',bg:'#a78bfa22',max:20}
+];
+var SUFFIX_GROUPS=['ドミナ'];
+var WEAPON_TYPES=[
+  {n:"（未選択）",atk:'avg'},
+  {n:"ソード",atk:'s'},{n:"ワイヤードランス",atk:'s'},{n:"パルチザン",atk:'s'},
+  {n:"ツインダガー",atk:'s'},{n:"ダブルセイバー",atk:'s'},{n:"ナックル",atk:'s'},
+  {n:"カタナ",atk:'sr'},{n:"デュアルブレード",atk:'st'},
+  {n:"アサルトライフル",atk:'r'},{n:"ランチャー",atk:'r'},{n:"ツインマシンガン",atk:'r'},
+  {n:"バレットボウ",atk:'sr'},{n:"ガンスラッシュ",atk:'r'},
+  {n:"ロッド",atk:'t'},{n:"タリス",atk:'t'},{n:"ウォンド",atk:'t'},
+  {n:"ジェットブーツ",atk:'st'},{n:"タクト",atk:'t'}
+];
+
+// ==================== ツールチップ ====================
+var _ttEl,_ttName,_ttStats,_ttBody;
+function initTT(){_ttEl=document.getElementById('ex_tooltip');_ttName=document.getElementById('tt_name');_ttStats=document.getElementById('tt_stats');_ttBody=document.getElementById('tt_body');}
+var TT_W_SINGLE=280,TT_W_COMPARE=500,TT_METER_CELLS=10;
+function buildMeter(v,max,color){
+  var filled=Math.round((Math.min(Math.max(v,0),max)/max)*TT_METER_CELLS),html='';
+  for(var i=0;i<TT_METER_CELLS;i++){var on=i<filled;html+='<span style="display:inline-block;width:10px;height:10px;border-radius:1px;flex-shrink:0;background:'+(on?color:color+'33')+';border:1px solid '+(on?color:color+'22')+'"></span>';}
+  return html;
+}
+function statCard(sd,v,highlight){
+  var unit=(sd.k==='hp'||sd.k==='pp'||sd.k==='td')?'':'%',prefix=v>0?'+':'';
+  return '<div style="display:flex;align-items:center;gap:4px;padding:3px 7px;border-radius:5px;background:'+sd.bg+';border:1px solid '+sd.color+(highlight?'55':'22')+';opacity:'+(highlight?1:0.65)+';margin-bottom:4px">'
+    +'<span style="flex-shrink:0;width:46px;font-size:10px;font-weight:700;color:'+sd.color+'">'+sd.label+'</span>'
+    +'<span style="display:flex;gap:1px;flex:1;min-width:0">'+(v>0?buildMeter(v,sd.max,sd.color):'')+'</span>'
+    +'<span style="flex-shrink:0;width:40px;font-size:11px;font-weight:700;color:'+(v<0?'#f87171':sd.color)+';text-align:right">'+prefix+v+unit+'</span></div>';
+}
+function showTT(e,preset,isEx,pid){
+  if(!_ttEl)initTT();
+  if(!preset||preset.n==='（なし）'||preset.cat||preset.subcat)return;
+  var nameColor=isEx?'#e05080':'#a78bfa';
+  _ttEl.style.borderColor=isEx?'#e0508066':'#7c3aed66';
+  _ttEl.style.background=isEx?'#1a0f1f':'#110f1a';
+  var curName=pid?getN(pid):'';
+  var list=isEx?EX_PRESETS:PRESETS;
+  var curPreset=(curName&&curName!=='（なし）')?list.find(function(x){return x.n===curName;}):null;
+  var hasCompare=!!(curPreset&&!curPreset.cat&&!curPreset.subcat&&curPreset.n!==preset.n);
+  if(hasCompare){
+    _ttEl.style.width=TT_W_COMPARE+'px';_ttName.textContent='';
+    var allKeys=STAT_DEFS.filter(function(sd){return(preset[sd.k]&&preset[sd.k]!==0)||(curPreset[sd.k]&&curPreset[sd.k]!==0);});
+    var colW=Math.floor((TT_W_COMPARE-28-44)/2)+'px';
+    var rows='<div style="display:grid;grid-template-columns:'+colW+' 44px '+colW+';gap:4px;margin-bottom:6px">'
+      +'<div style="text-align:center;font-size:11px;font-weight:600;color:#64748b;background:#1e2535;border-radius:4px;padding:3px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">現在：'+curPreset.n+'</div><div></div>'
+      +'<div style="text-align:center;font-size:11px;font-weight:600;color:'+nameColor+';background:'+nameColor+'22;border-radius:4px;padding:3px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">候補：'+preset.n+'</div></div>';
+    allKeys.forEach(function(sd){
+      var vN=preset[sd.k]||0,vC=curPreset[sd.k]||0;
+      var unit=(sd.k==='hp'||sd.k==='pp'||sd.k==='td')?'':'%';
+      var diff=Math.round((vN-vC)*100)/100,dc=diff>0?'#4ade80':diff<0?'#f87171':'#64748b',ds=(diff>0?'+':'')+diff+unit;
+      rows+='<div style="display:grid;grid-template-columns:'+colW+' 44px '+colW+';gap:4px;align-items:center;margin-bottom:4px">'+statCard(sd,vC,false)+'<div style="text-align:center;font-size:12px;font-weight:700;color:'+dc+'">'+ds+'</div>'+statCard(sd,vN,true)+'</div>';
+    });
+    _ttStats.innerHTML=rows;_ttStats.style.display='block';
+    if(isEx&&(curPreset.cond||preset.cond)){
+      _ttStats.innerHTML+='<div style="display:grid;grid-template-columns:'+colW+' 44px '+colW+';gap:4px;margin-top:6px;border-top:1px solid #ffffff18;padding-top:6px">'
+        +'<div style="font-size:11px;color:#e2e8f0;line-height:1.6">'+(curPreset.cond?curPreset.cond.split('／').map(function(s){return s.trim();}).filter(Boolean).join('<br>'):'—')+'</div><div></div>'
+        +'<div style="font-size:11px;color:#e2e8f0;line-height:1.6">'+(preset.cond?preset.cond.split('／').map(function(s){return s.trim();}).filter(Boolean).join('<br>'):'—')+'</div></div>';
+    }
+    _ttBody.style.display='none';
+  } else {
+    _ttEl.style.width=TT_W_SINGLE+'px';_ttName.style.color=nameColor;_ttName.textContent=preset.n;
+    var sh='';
+    STAT_DEFS.forEach(function(sd){var v=preset[sd.k];if(v===undefined||v===null||v===0)return;sh+=statCard(sd,v,true);});
+    _ttStats.innerHTML=sh;_ttStats.style.display=sh?'block':'none';
+    var cond=preset.cond||'';
+    if(cond){_ttBody.innerHTML=cond.split('／').map(function(s){return s.trim();}).filter(Boolean).join('<br>');_ttBody.className=sh?'tt-body':'tt-body no-border';_ttBody.style.display='block';}
+    else _ttBody.style.display='none';
+  }
+  _ttEl.style.display='block';moveTT(e);
+}
+function moveTT(e){
+  if(!_ttEl||_ttEl.style.display==='none')return;
+  var w=parseInt(_ttEl.style.width)||TT_W_SINGLE,x=e.clientX+14,y=e.clientY+14;
+  if(x+w>window.innerWidth-8)x=e.clientX-w-10;
+  if(y+_ttEl.offsetHeight>window.innerHeight-8)y=e.clientY-_ttEl.offsetHeight-10;
+  _ttEl.style.left=x+'px';_ttEl.style.top=y+'px';
+}
+function hideTT(){if(!_ttEl)initTT();_ttEl.style.display='none';}
+document.addEventListener('mousemove',moveTT);
+
+// ==================== スロット・コピー ====================
+var currentSlot=0;
+function selectSlot(slot){
+  currentSlot=slot;
+  for(var i=0;i<3;i++){var b=document.getElementById('slot_btn_'+i);if(b)b.className='slot-btn'+(i===slot?' active':'');}
+  doLoad();
+}
+function showMsg(txt){var m=document.getElementById('save_msg');if(m){m.textContent=txt;setTimeout(function(){m.textContent='';},2000);}}
+function doSave(){
+  storage.set('calc_state_'+currentSlot,JSON.stringify(collectState()));
+  showMsg((currentSlot+1)+' 保存しました');
+}
+function doLoad(){
+  var res=storage.get('calc_state_'+currentSlot);
+  if(!res){resetState();return;}
+  try{applyState(JSON.parse(res));}catch(e){resetState();}
+}
+function togCopyMenu(){
+  var menu=document.getElementById('copy_menu'),isOpen=menu.style.display==='block';
+  menu.style.display=isOpen?'none':'block';
+  if(!isOpen){
+    var items=document.getElementById('copy_menu_items');
+    items.innerHTML=[0,1,2].filter(function(i){return i!==currentSlot;}).map(function(i){
+      return '<div onclick="copySlot('+i+')" style="padding:7px 12px;font-size:12px;color:#e2e8f0;cursor:pointer" onmouseover="this.style.background=\'#334155\'" onmouseout="this.style.background=\'\'">スロット '+(i+1)+'へコピー</div>';
+    }).join('');
+  }
+}
+function copySlot(toSlot){
+  storage.set('calc_state_'+toSlot,JSON.stringify(collectState()));
+  showMsg('スロット'+(currentSlot+1)+'→'+(toSlot+1)+' コピーしました');
+  document.getElementById('copy_menu').style.display='none';
+}
+
+// ==================== トグル ====================
+function setTogExCond(el){togExCond=el.checked;calc();}
+function setTogRingCond(el){togRingCond=el.checked;calc();}
+function setTogSl(el){togSlState=el.checked;if(togSlState)togSubSlState=false;if(!togSlState)togGearState=0;calc();}
+function setTogGear(el){togGearState=parseInt(el.value)||0;calc();}
+function setTogSubSl(el){togSubSlState=el.checked;if(togSubSlState)togSlState=false;calc();}
+
+// ==================== スロット比較 ====================
+function togSlotCompare(){
+  showSlotCompare=!showSlotCompare;
+  var btn=document.getElementById('slot_compare_btn');
+  if(btn)btn.textContent=showSlotCompare?'比較を閉じる':'他スロットと比較';
+  if(showSlotCompare)renderSlotCompare();
+  else{var el=document.getElementById('slot_compare_area');if(el)el.innerHTML='';}
+}
+function renderSlotCompare(){
+  var el=document.getElementById('slot_compare_area');if(!el)return;
+  var currentD=calcDmgIndex(_lastTot);
+  var currentIdx=currentD?currentD.dmgIndex:null;
+  var rows=[0,1,2].map(function(i){
+    if(i===currentSlot)return{slot:i,index:currentIdx,isCurrent:true};
+    var res=storage.get('calc_state_'+i);
+    if(!res)return{slot:i,index:null,isCurrent:false};
+    try{return{slot:i,index:computeIndexFromState(JSON.parse(res)),isCurrent:false};}
+    catch(e){return{slot:i,index:null,isCurrent:false};}
+  });
+  var validRows=rows.filter(function(r){return r.index!==null;});
+  var barMax=validRows.length?Math.max.apply(null,validRows.map(function(r){return r.index;})):1;
+  var html='<div style="margin-top:10px;border-top:1px solid #1e2535;padding-top:10px">'
+    +'<div style="font-size:10px;font-weight:500;color:#475569;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">スロット比較</div>'
+    +'<div style="display:flex;flex-direction:column;gap:4px">';
+  rows.forEach(function(r){
+    var diff=0,diffStr='',diffColor='#64748b';
+    if(r.isCurrent){diffStr='現在';diffColor='#7c3aed99';}
+    else if(r.index!==null&&currentIdx!==null){
+      diff=(r.index-currentIdx)/currentIdx*100;
+      diffStr=(diff>0?'+':'')+diff.toFixed(1)+'%';
+      diffColor=diff>0?'#4ade80':'#f87171';
+    } else {diffStr='—';}
+    html+='<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:'+(r.isCurrent?'#7c3aed18':'#0f1117')+';border:1px solid '+(r.isCurrent?'#7c3aed44':'#1e2535')+'">'
+      +'<span style="font-size:11px;color:#64748b;flex-shrink:0;width:80px">スロット'+(r.slot+1)+(r.isCurrent?' <span style="color:#7c3aed99;font-size:10px">現在</span>':'')+'</span>'
+      +(r.index!==null
+        ?'<div style="flex:1;background:#1e2535;border-radius:4px;height:6px;overflow:hidden"><div style="height:100%;width:'+(r.index/barMax*100).toFixed(1)+'%;background:'+(r.isCurrent?'#7c3aed':'#475569')+';border-radius:4px"></div></div>'
+        +'<span style="font-size:13px;font-weight:700;color:'+(r.isCurrent?'#a78bfa':'#e2e8f0')+';flex-shrink:0;width:72px;text-align:right">'+r.index.toLocaleString()+'</span>'
+        +'<span style="font-size:11px;font-weight:600;color:'+diffColor+';flex-shrink:0;width:52px;text-align:right">'+diffStr+'</span>'
+        :'<span style="font-size:11px;color:#334155;flex:1">データなし</span>')
+      +'</div>';
+  });
+  el.innerHTML=html+'</div></div>';
+}
+function computeIndexFromState(st){
+  try{
+    var wpn=WEAPONS[parseInt(st.ws||0)]||WEAPONS[0];if(!wpn.atk)return null;
+    var wt=WEAPON_TYPES[parseInt(st.wts||0)]||WEAPON_TYPES[0];
+    var s=1,r=1,t=1;
+    GEAR.filter(function(g){return !g.isRing;}).forEach(function(g){
+      var bs=1,br=1,bt=1;
+      if(!g.isWeapon){var a=ARMORS[parseInt(st[g.id+'s']||0)]||ARMORS[0];bs=1+(a.s||0)/100;br=1+(a.r||0)/100;bt=1+(a.t||0)/100;}
+      for(var i=0;i<8;i++){
+        var pid=g.id+'_af'+i,nm=st.af&&st.af[pid],p=nm?PRESETS.find(function(x){return x.n===nm;}):null;
+        if(p&&!p.cat&&!p.subcat){bs*=(1+(p.s||0)/100);br*=(1+(p.r||0)/100);bt*=(1+(p.t||0)/100);}
+        else{bs*=(1+parseFloat((st.bi&&st.bi[pid+'_s'])||0)/100);br*=(1+parseFloat((st.bi&&st.bi[pid+'_r'])||0)/100);bt*=(1+parseFloat((st.bi&&st.bi[pid+'_t'])||0)/100);}
+      }
+      if(g.isWeapon){for(var j=0;j<3;j++){
+        var epid='weapon_ex'+j,enm=st.af&&st.af[epid],ep=enm?EX_PRESETS.find(function(x){return x.n===enm;}):null;
+        if(ep&&!ep.cat){bs*=(1+(ep.s||0)/100);br*=(1+(ep.r||0)/100);bt*=(1+(ep.t||0)/100);}
+        else{bs*=(1+parseFloat((st.bi&&st.bi[epid+'_s'])||0)/100);br*=(1+parseFloat((st.bi&&st.bi[epid+'_r'])||0)/100);bt*=(1+parseFloat((st.bi&&st.bi[epid+'_t'])||0)/100);}
+      }}
+      s*=bs;r*=br;t*=bt;
+    });
+    var powMul=wt.atk==='s'?s:wt.atk==='r'?r:wt.atk==='t'?t:wt.atk==='sr'?Math.max(s,r):wt.atk==='st'?Math.max(s,t):(s+r+t)/3;
+    var latentMul=1+(wpn.latentPow||0)/100;
+    var fixaIdx=parseInt(st.fixa||0),fixaLv=parseInt(st.fixalv||0),fixa=FIXAS[fixaIdx]||FIXAS[0];
+    var fixaPow=0;
+    if(fixa.rows)fixa.rows.forEach(function(row){
+      if(row.label==='PB威力+'||row.label==='クリティカル発生率+'||row.label==='クリティカル時の威力+')return;
+      var isWA=fixa.n==='フィクサ・ウィクス'||fixa.n==='フィクサ・アンウィクス';
+      if(row.isCond&&!isWA&&row.label!=='_abandak')return;
+      if(row.label==='_abandak'){fixaPow+=Math.round(10*(row.vals[fixaLv]||0)*1000)/1000;return;}
+      fixaPow+=row.vals[fixaLv]||0;
+    });
+    var fixaMul=1+fixaPow/100;
+    var t1=RING_TYPE1[parseInt(st.rt1||0)]||RING_TYPE1[0],t1lv=parseInt(st.rt1lv||0);
+    var ringPow=(t1.pow&&t1.pow.length)?(t1.pow[Math.min(t1lv,t1.pow.length-1)]||[0,0])[0]||0:0;
+    var ringMul=1+ringPow/100;
+    var totalPowMul=powMul*latentMul*fixaMul*ringMul;
+    var flBase=wpn.fl||0,flMul=1;
+    GEAR.filter(function(g){return !g.isRing;}).forEach(function(g){
+      for(var i=0;i<8;i++){var pid=g.id+'_af'+i,nm=st.af&&st.af[pid],p=nm?PRESETS.find(function(x){return x.n===nm;}):null;flMul*=(1+(p&&!p.cat?p.fl||0:parseFloat((st.bi&&st.bi[pid+'_fl'])||0))/100);}
+      if(g.isWeapon)for(var j=0;j<3;j++){var epid='weapon_ex'+j,enm=st.af&&st.af[epid],ep=enm?EX_PRESETS.find(function(x){return x.n===enm;}):null;flMul*=(1+(ep&&!ep.cat?ep.fl||0:parseFloat((st.bi&&st.bi[epid+'_fl'])||0))/100);}
+    });
+    var flFin=Math.min(flBase*flMul,100)/100;
+    var critRate=15+(wpn.critBonus||0);
+    if(fixa.critBonus)critRate+=fixa.critBonus[fixaLv]||0;
+    if(togSlState)critRate+=10;critRate+=togGearState*2;if(togSubSlState)critRate+=5;
+    critRate=Math.min(critRate,100)/100;
+    var critPowBonus=fixa.n==='フィクサ・テルミナ'&&fixa.rows&&fixa.rows[0]?(fixa.rows[0].vals[fixaLv]||0)/100:0;
+    var critMul=1.2*(1+critPowBonus);
+    var adjCoef=(1-critRate)*(flFin+1)/2+critRate*critMul;
+    return Math.round(wpn.atk*totalPowMul*adjCoef);
+  }catch(e){return null;}
+}
+
+// ==================== ドロップダウン ====================
+var GEAR_SORTS={};
+function getGid(pid){return pid.replace(/_(?:af|ex)\d+$/,'');}
+function getSortKeys(pid){var gid=getGid(pid);if(!GEAR_SORTS[gid])GEAR_SORTS[gid]=[];return GEAR_SORTS[gid];}
+function setSortKeys(pid,keys){GEAR_SORTS[getGid(pid)]=keys;}
+function closeAll(){document.querySelectorAll('.dd-panel.open').forEach(function(p){p.classList.remove('open');p.previousElementSibling.classList.remove('open');});}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.dd-wrap')){closeAll();hideTT();}
+  if(!e.target.closest('#copy_btn')&&!e.target.closest('#copy_menu')){var m=document.getElementById('copy_menu');if(m)m.style.display='none';}
+});
+document.addEventListener('mouseover',function(e){
+  var el=e.target.closest('.dd-item[data-pidx]');
+  if(!el){if(!e.target.closest('#ex_tooltip'))hideTT();return;}
+  var idx=parseInt(el.getAttribute('data-pidx')),isEx=el.getAttribute('data-isex')==='true',pid=el.getAttribute('data-pid');
+  var list=isEx?EX_PRESETS:PRESETS,preset=list[idx];
+  if(!preset||preset.cat||preset.subcat||preset.n==='（なし）'){hideTT();return;}
+  showTT(e,preset,isEx,pid);
+});
+function buildSortBtns(pid){
+  return '<div class="dd-sort">'
+    +'<button class="ss" data-key="s" onclick="sortDD(\''+pid+'\',\'s\')" type="button">打撃</button>'
+    +'<button class="sr" data-key="r" onclick="sortDD(\''+pid+'\',\'r\')" type="button">射撃</button>'
+    +'<button class="st" data-key="t" onclick="sortDD(\''+pid+'\',\'t\')" type="button">法撃</button>'
+    +'<button class="shp" data-key="hp" onclick="sortDD(\''+pid+'\',\'hp\')" type="button">HP</button>'
+    +'<button class="spp" data-key="pp" onclick="sortDD(\''+pid+'\',\'pp\')" type="button">PP</button>'
+    +'<button class="sfl" data-key="fl" onclick="sortDD(\''+pid+'\',\'fl\')" type="button">下限</button>'
+    +'<button data-key="dr" onclick="sortDD(\''+pid+'\',\'dr\')" type="button" style="color:#2aa8b8">耐性</button>'
+    +'<button data-key="pow" onclick="sortDD(\''+pid+'\',\'pow\')" type="button" style="color:#f1a030;border-color:#f1a03044">火力</button>'
+    +'<button data-key="" onclick="sortDD(\''+pid+'\',null)" type="button" style="color:#475569">元順</button>'
+    +'</div><div class="sort-status"></div>';
+}
+function updateSortBtns(pid){
+  var keys=getSortKeys(pid),panel=document.getElementById(pid+'_panel');if(!panel)return;
+  panel.querySelectorAll('.dd-sort button[data-key]').forEach(function(b){
+    var k=b.dataset.key;if(!k){b.classList.remove('active');return;}
+    var rank=keys.indexOf(k);b.classList.toggle('active',rank!==-1);
+    b.textContent=rank!==-1?(KEY_NAMES[k]||k)+' '+(rank+1)+'位':(KEY_NAMES[k]||k);
+  });
+  var lbl=panel.querySelector('.sort-status');
+  if(lbl)lbl.textContent=keys.length?keys.map(function(k,i){return(i+1)+'位:'+(KEY_NAMES[k]||k);}).join(' → '):'';
+}
+function sortDD(pid,key){
+  var keys=getSortKeys(pid).slice();
+  if(!key){keys=[];}else if(key==='pow'){keys=keys.length===1&&keys[0]==='pow'?[]:['pow'];}
+  else{if(keys.indexOf('pow')!==-1)keys=[];var idx=keys.indexOf(key);if(idx!==-1)keys.splice(idx,1);else if(keys.length<3)keys.push(key);}
+  setSortKeys(pid,keys);updateSortBtns(pid);filtDD(pid);
+}
+function filtDD(pid){var q=document.getElementById(pid+'_srch').value;var list=pid.indexOf('_ex')!==-1?EX_PRESETS:PRESETS;document.getElementById(pid+'_list').innerHTML=renderItems(pid,list,q);}
+function getUsedInGear(gid,excludePid){
+  var used={names:[],prefixes:[],exSeries:[],suffixBases:[]};
+  var PFX=['ロイス','アトス','エルガ','テルフィア','テラ'];
+  function addName(n){
+    if(!n||n==='（なし）')return;used.names.push(n);
+    for(var i=0;i<PFX.length;i++){if(n.startsWith(PFX[i])){used.prefixes.push(n.slice(PFX[i].length));break;}}
+    if(n.startsWith('ユーゼ・'))used.exSeries.push('ユーゼ');
+    if(n.startsWith('ユディ・'))used.exSeries.push('ユディ');
+    var base=n.endsWith(' LC')?n.slice(0,-3):n.endsWith(' MN')?n.slice(0,-3):n;
+    SUFFIX_GROUPS.forEach(function(sfx){if(base.endsWith(sfx)||base.endsWith('・'+sfx))used.suffixBases.push(base);});
+  }
+  for(var i=0;i<8;i++){var p=gid+'_af'+i;if(p!==excludePid)addName(getN(p));}
+  if(gid==='weapon'){for(var j=0;j<3;j++){var p2='weapon_ex'+j;if(p2!==excludePid)addName(getN(p2));}}
+  return used;
+}
+function isDisabled(p,used,isEx){
+  if(!p||p.cat||p.subcat||p.n==='（なし）')return false;
+  if(used.names.indexOf(p.n)!==-1)return true;
+  var PFX=['ロイス','アトス','エルガ','テルフィア','テラ'];
+  for(var i=0;i<PFX.length;i++){if(p.n.startsWith(PFX[i])&&used.prefixes.indexOf(p.n.slice(PFX[i].length))!==-1)return true;}
+  if(!isEx){if(p.n.startsWith('ユーゼ・')&&used.exSeries.indexOf('ユーゼ')!==-1)return true;if(p.n.startsWith('ユディ・')&&used.exSeries.indexOf('ユディ')!==-1)return true;}
+  if(p.n.endsWith(' LC')){var b1=p.n.slice(0,-3);if(used.names.indexOf(b1)!==-1||used.names.indexOf(b1+' MN')!==-1)return true;}
+  else if(p.n.endsWith(' MN')){var b2=p.n.slice(0,-3);if(used.names.indexOf(b2)!==-1||used.names.indexOf(b2+' LC')!==-1)return true;}
+  else{if(used.names.indexOf(p.n+' LC')!==-1||used.names.indexOf(p.n+' MN')!==-1)return true;}
+  var pbase=p.n.endsWith(' LC')?p.n.slice(0,-3):p.n.endsWith(' MN')?p.n.slice(0,-3):p.n,psfx='';
+  SUFFIX_GROUPS.forEach(function(sfx){if(pbase.endsWith(sfx)||pbase.endsWith('・'+sfx))psfx=sfx;});
+  if(psfx){for(var bi=0;bi<used.suffixBases.length;bi++){var sb=used.suffixBases[bi];if(sb.endsWith(psfx)||sb.endsWith('・'+psfx))return true;}}
+  return false;
+}
+function renderItems(pid,list,q){
+  var sortKeys=getSortKeys(pid),lq=(q||'').toLowerCase(),gid=getGid(pid),isEx=pid.indexOf('_ex')!==-1,used=getUsedInGear(gid,pid);
+  var items=list.map(function(p,i){return{p:p,i:i};});
+  if(sortKeys.length){
+    var normals=items.filter(function(x){return !x.p.cat&&!x.p.subcat;});
+    normals.sort(function(a,b){
+      if(sortKeys[0]==='pow')return((b.p.s||0)+(b.p.r||0)+(b.p.t||0)+(b.p.fl||0))-((a.p.s||0)+(a.p.r||0)+(a.p.t||0)+(a.p.fl||0));
+      for(var ki=0;ki<sortKeys.length;ki++){var diff=(b.p[sortKeys[ki]]||0)-(a.p[sortKeys[ki]]||0);if(diff!==0)return diff;}return 0;
+    });items=normals;
+  }
+  var html='';
+  items.forEach(function(x){
+    var p=x.p,i=x.i;
+    if(p.cat){if(!q&&!sortKeys.length)html+='<div class="dd-item cat">'+p.n+'</div>';return;}
+    if(p.subcat){if(!q&&!sortKeys.length)html+='<div class="dd-item subcat"><span style="background:'+(p.color||'#475569')+'"></span>'+p.n+'</div>';return;}
+    if(q&&!p.n.toLowerCase().includes(lq))return;
+    var disabled=isDisabled(p,used,isEx),sub='';
+    if(sortKeys.length&&p.n!=='（なし）'){
+      var parts;
+      if(sortKeys[0]==='pow'){var score=(p.s||0)+(p.r||0)+(p.t||0)+(p.fl||0);parts='<span style="color:'+(disabled?'#2a3547':'#f1a030')+';font-size:12px">火力スコア '+score+'</span>';}
+      else{parts=sortKeys.map(function(k){return'<span style="color:'+(disabled?'#2a3547':(KEY_COLORS[k]||'#475569'))+';font-size:12px">'+KEY_NAMES[k]+' <b>'+(p[k]||0)+'</b></span>';}).join('<span style="color:#334155;margin:0 3px">/</span>');}
+      sub='<div style="margin-top:2px">'+parts+'</div>';
+    }
+    var ttAttr=(!disabled&&p.n!=='（なし）')?' data-pidx="'+i+'" data-isex="'+isEx+'" data-pid="'+pid+'"':'';
+    html+='<div class="dd-item'+(p.n==='（なし）'?' none-item':disabled?' disabled':sub?' has-sub':'')+'"'+ttAttr+' onclick="selDD(\''+pid+'\','+i+')" style="'+(sub?'padding:4px 10px;white-space:normal':'')+'">'+p.n+sub+'</div>';
+  });
+  return html||'<div class="dd-item none-item">該当なし</div>';
+}
+function buildDD(pid,list){
+  return '<div class="dd-wrap"><button class="dd-btn" id="'+pid+'_btn" onclick="togDD(\''+pid+'\')" type="button">（なし）</button>'
+    +'<div class="dd-panel" id="'+pid+'_panel"><div class="dd-search"><input id="'+pid+'_srch" placeholder="検索..." oninput="filtDD(\''+pid+'\')" autocomplete="off"></div>'
+    +buildSortBtns(pid)+'<div class="dd-list" id="'+pid+'_list">'+renderItems(pid,list,'')+'</div></div></div>';
+}
+function togDD(pid){
+  var panel=document.getElementById(pid+'_panel'),btn=document.getElementById(pid+'_btn'),open=panel.classList.contains('open');closeAll();
+  if(!open){
+    var rect=btn.getBoundingClientRect();
+    var panelH=480,spaceBelow=window.innerHeight-rect.bottom,spaceAbove=rect.top;
+    var goUp=spaceBelow<panelH&&spaceAbove>spaceBelow;
+    panel.style.left=rect.left+'px';panel.style.width=Math.max(rect.width,260)+'px';
+    if(goUp){panel.style.top='';panel.style.bottom=(window.innerHeight-rect.top)+'px';}
+    else{panel.style.bottom='';panel.style.top=rect.bottom+'px';}
+    panel.classList.add('open');btn.classList.add('open');
+    setTimeout(function(){updateSortBtns(pid);var s=document.getElementById(pid+'_srch');if(s){s.value='';s.focus();}filtDD(pid);},10);
+  }
+}
+function getN(pid){var b=document.getElementById(pid+'_btn');return b?b.textContent:'（なし）';}
+function selDD(pid,idx){
+  var list=pid.indexOf('_ex')!==-1?EX_PRESETS:PRESETS,p=list[idx];if(!p||p.cat||p.subcat)return;
+  document.getElementById(pid+'_btn').textContent=p.n;
+  ALL_STATS.forEach(function(st){var el=document.getElementById(pid+'_'+st.k);if(el)el.value=p[st.k]||0;});
+  closeAll();hideTT();var gid=getGid(pid);
+  if(gid==='weapon'){chkLim();updExDupe();chkExSub();}
+  updDupe(gid);calc();
+}
+function isExA(n){return n&&n.startsWith('EX')&&n.endsWith('A');}
+function onExSub(pid){
+  var sub=document.getElementById(pid+'_sub');if(!sub)return;
+  var s=EX_SUB[parseInt(sub.value)];
+  if(!isExA(getN(pid)))['hp','pp','dr','td'].forEach(function(k){var el=document.getElementById(pid+'_'+k);if(el)el.value=s[k]||0;});
+  chkExSub();calc();
+}
+function chkExSub(){
+  var bad=false;
+  for(var i=0;i<3;i++){var pid='weapon_ex'+i;var sub=document.getElementById(pid+'_sub');if(sub&&isExA(getN(pid))&&parseInt(sub.value)!==0){bad=true;break;}}
+  var el=document.getElementById('ex_sub_warn');if(!el)return;
+  el.style.display=bad?'block':'none';el.textContent=bad?'EX Aには副効果をつけられません':'';
+}
+function aRow(gid,idx,isEx){
+  var pid=gid+'_'+(isEx?'ex':'af')+idx,list=isEx?EX_PRESETS:PRESETS;
+  var subCell=isEx?'<td class="sub-cell"><select id="'+pid+'_sub" onchange="onExSub(\''+pid+'\')">'+EX_SUB.map(function(s,i){return'<option value="'+i+'">'+s.n+'</option>';}).join('')+'</select></td>':'';
+  return '<tr id="row_'+pid+'"><td>'+buildDD(pid,list)+'</td>'+subCell+ALL_STATS.map(function(st){return'<td class="cell-'+st.k+'"><input type="number" id="'+pid+'_'+st.k+'" value="0" step="0.01" class="col-'+st.k+'"></td>';}).join('')+'</tr>';
+}
+function aTbl(gid,cnt,isEx){
+  var thSub=isEx?'<th style="width:54px">副効果</th>':'',rows='';
+  for(var i=0;i<cnt;i++)rows+=aRow(gid,i,isEx);
+  return '<div class="tbl-scroll"><table class="affix-tbl'+(isEx?' ex-tbl':'')+'">'
+    +'<thead><tr><th style="width:160px">能力名</th>'+thSub+ALL_STATS.map(function(s){return'<th>'+s.label+'</th>';}).join('')+'</tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+function buildRingPanel(){
+  var t1opts=RING_TYPE1.map(function(r,i){return'<option value="'+i+'">'+r.n+'</option>';}).join('');
+  var t2opts=RING_TYPE2.map(function(r,i){return'<option value="'+i+'">'+r.n+'</option>';}).join('');
+  var lvOpts=[0,1,2,3,4,5].map(function(v){return'<option value="'+v+'">+'+v+'</option>';}).join('');
+  var lvStyle='width:80px;background:#0f1117;border:1px solid #10b98144;border-radius:8px;color:#34d399;font-size:13px;padding:6px 8px;outline:none';
+  return '<div class="gear-panel" id="panel_ring"><div class="gear-card" style="border-color:#10b98133"><div class="slabel">スキルリング</div>'
+    +'<div style="display:flex;flex-direction:column;gap:10px">'
+    +'<div><label style="font-size:10px;color:#10b98188;display:block;margin-bottom:4px;font-weight:500;letter-spacing:.06em;text-transform:uppercase">タイプ1</label>'
+    +'<div style="display:flex;gap:8px;align-items:center"><select id="ring_t1" onchange="calc()" style="flex:1;background:#0f1117;border:1px solid #10b98144;border-radius:10px;color:#34d399;font-size:13px;padding:8px 10px;outline:none">'+t1opts+'</select>'
+    +'<select id="ring_t1_lv" onchange="calc()" style="'+lvStyle+'">'+lvOpts+'</select></div></div>'
+    +'<div><label style="font-size:10px;color:#10b98188;display:block;margin-bottom:4px;font-weight:500;letter-spacing:.06em;text-transform:uppercase">タイプ2</label>'
+    +'<div style="display:flex;gap:8px;align-items:center"><select id="ring_t2" onchange="calc()" style="flex:1;background:#0f1117;border:1px solid #10b98144;border-radius:10px;color:#34d399;font-size:13px;padding:8px 10px;outline:none">'+t2opts+'</select>'
+    +'<select id="ring_t2_lv" onchange="calc()" style="'+lvStyle+'">'+lvOpts+'</select></div></div>'
+    +'</div></div></div>';
+}
+function buildPanel(g){
+  if(g.isRing)return buildRingPanel();
+  var bsts=g.isWeapon?WEAPON_BASE:ARMOR_BASE;
+  var baseHTML=g.isWeapon
+    ?'<div id="weapon_fl_display" style="background:#0f1117;border:1px solid #f5953322;border-radius:10px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between">'
+    +'<span style="font-size:10px;font-weight:500;color:#f5953388;letter-spacing:.06em">ダメージ補正範囲</span>'
+    +'<span id="weapon_fl_label" style="font-size:13px;font-weight:600;color:#fb923c">—</span>'
+    +'<input type="number" id="weapon_fl" value="0" step="0.01" style="display:none"></div>'
+    :bsts.map(function(st){
+      var c=sColors[st.k]||'',lc=c?c+'88':'#64748b',ic=c?'color:'+c:'',noUnit=st.k==='hp'||st.k==='pp';
+      var bStyle=st.k==='dr'?' style="border-color:#22d3ee22"':'';
+      return '<div class="stat-box"'+bStyle+'><label style="color:'+lc+'">'+st.label+'</label>'
+        +'<div class="iw"><input type="number" id="'+g.id+'_'+st.k+'" value="0" step="0.01" style="'+ic+'">'+(noUnit?'':'<span class="unit">%</span>')+'</div></div>';
+    }).join('');
+  var wtOpts=WEAPON_TYPES.map(function(t,i){return'<option value="'+i+'">'+t.n+'</option>';}).join('');
+  var fixaOpts=FIXAS.map(function(f,i){return'<option value="'+i+'">'+f.n+'</option>';}).join('');
+  var fixaLvOpts=[1,2,3,4,5].map(function(v){return'<option value="'+(v-1)+'">Lv.'+v+'</option>';}).join('');
+  var fixaSel=g.isWeapon
+    ?'<div class="sel-wrap" style="margin-top:.5rem"><label style="color:#a78bfa88">武器種</label>'
+    +'<select id="weapon_type_sel" onchange="calc()" style="width:100%;background:#0f1117;border:1px solid #7c3aed44;border-radius:10px;color:#a78bfa;font-size:13px;padding:8px 10px;outline:none">'+wtOpts+'</select></div>'
+    +'<div class="sel-wrap" style="margin-top:.5rem"><label style="color:#f59e0b88">プリセット能力</label>'
+    +'<div style="display:flex;gap:8px;align-items:center">'
+    +'<select id="fixa_sel" onchange="calc()" style="flex:1;background:#0f1117;border:1px solid #f59e0b44;border-radius:10px;color:#f59e0b;font-size:13px;padding:8px 10px;outline:none">'+fixaOpts+'</select>'
+    +'<select id="fixa_lv" onchange="calc()" style="width:80px;background:#0f1117;border:1px solid #f59e0b44;border-radius:8px;color:#f59e0b;font-size:13px;padding:6px 8px;outline:none">'+fixaLvOpts+'</select>'
+    +'</div></div>':'';
+  var selHtml=g.isWeapon
+    ?'<div class="sel-wrap"><label>武器選択</label><select onchange="onWpn(this)">'+WEAPONS.map(function(w,i){return'<option value="'+i+'">'+w.n+'</option>';}).join('')+'</select></div>'+fixaSel
+    :'<div class="sel-wrap armor-sel"><label>ユニット選択</label><select onchange="onAmr(this,\''+g.id+'\')">'+ARMORS.map(function(a,i){return'<option value="'+i+'">'+a.n+'</option>';}).join('')+'</select></div>';
+  var copyBtns=g.isWeapon||g.isRing?'':GEAR.filter(function(og){return og.id!==g.id&&!og.isWeapon&&!og.isRing;}).map(function(og){
+    return'<button onclick="copyAff(\''+g.id+'\',\''+og.id+'\')" style="padding:3px 8px;border-radius:6px;border:1px solid #1e2535;background:#0f1117;color:#64748b;font-size:11px;cursor:pointer">'+og.label+'</button>';
+  }).join('');
+  var exSec=g.isWeapon?'<div class="ex-wrap">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+    +'<div class="ex-label">EX能力（武器専用・最大3）</div>'
+    +'<div id="affix_warn" class="warn" style="margin-bottom:0">能力合計が8を超えています</div></div>'
+    +'<div id="ex_dupe_warn" class="warn"></div><div id="ex_sub_warn" class="warn"></div>'
+    +aTbl(g.id,3,true)+'</div>':'';
+  return '<div class="gear-panel" id="panel_'+g.id+'"><div class="gear-card '+(g.isWeapon?'weapon-card':'armor-card')+'">'
+    +selHtml+'<div class="slabel">基本ステータス</div>'
+    +'<div class="stats-grid" style="grid-template-columns:repeat('+(g.isWeapon?1:bsts.length)+',1fr)">'+baseHTML+'</div>'
+    +'<div class="affixes-wrap"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+    +'<div class="slabel" style="margin-bottom:0">能力（最大8）</div>'
+    +(copyBtns?'<div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:#475569">コピー→</span>'+copyBtns+'</div>':'')
+    +'</div><div class="hint">能力名を検索して選択、または数値を直接入力</div>'
+    +'<div id="dupe_warn_'+g.id+'" class="warn"></div>'+aTbl(g.id,8,false)+'</div>'+exSec+'</div></div>';
+}
+var tabsEl=document.getElementById('tabs'),panelsEl=document.getElementById('panels');
+GEAR.forEach(function(g,i){
+  var btn=document.createElement('button');
+  btn.className='tab-btn '+(g.isWeapon?'weapon':g.isRing?'ring':'armor')+(i===0?' active':'');
+  btn.textContent=g.label;
+  btn.onclick=function(){
+    document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');
+    document.querySelectorAll('.gear-panel').forEach(function(p){p.classList.remove('active');});document.getElementById('panel_'+g.id).classList.add('active');
+  };
+  tabsEl.appendChild(btn);
+  var div=document.createElement('div');div.innerHTML=buildPanel(g);while(div.firstChild)panelsEl.appendChild(div.firstChild);
+});
+document.getElementById('panel_weapon').classList.add('active');
+
+// ==================== 重複チェック ====================
+var PREFIXES=['ロイス','アトス','エルガ','テルフィア','テラ'];
+var EXG=[{label:'ユーゼ系',test:function(n){return n.startsWith('ユーゼ・');}},{label:'ユディ系',test:function(n){return n.startsWith('ユディ・');}}];
+function baseOP(n){if(!n||n==='（なし）')return null;for(var i=0;i<PREFIXES.length;i++)if(n.startsWith(PREFIXES[i]))return n.slice(PREFIXES[i].length);return null;}
+function getNames(gid){var names=[];for(var i=0;i<8;i++){var n=getN(gid+'_af'+i);if(n&&n!=='（なし）')names.push(n);}if(gid==='weapon'){for(var j=0;j<3;j++){var m=getN('weapon_ex'+j);if(m&&m!=='（なし）')names.push(m);}}return names;}
+function uniq(arr){return arr.filter(function(v,i,a){return a.indexOf(v)===i;});}
+function updDupe(gid){
+  var names=getNames(gid),warns=[],bases=names.map(baseOP).filter(Boolean),dups=bases.filter(function(b,i){return bases.indexOf(b)!==i;});
+  if(dups.length)warns.push('同系統の能力が重複しています：'+uniq(dups).join('、'));
+  EXG.forEach(function(g){var m=names.filter(function(n){return g.test(n);});if(m.length>1)warns.push(g.label+'は1箇所につき1個までです（現在'+m.length+'個）');});
+  var el=document.getElementById('dupe_warn_'+gid);if(el){if(warns.length){el.style.display='block';el.innerHTML=warns.join('<br>');}else el.style.display='none';}
+}
+function updExDupe(){
+  var names=[];for(var i=0;i<3;i++){var n=getN('weapon_ex'+i);if(n&&n!=='（なし）')names.push(n);}
+  var bases=names.map(function(n){return n?n.replace(/[ⅢA]$/,'').trim():null;}).filter(Boolean),dups=uniq(bases.filter(function(b,i){return bases.indexOf(b)!==i;}));
+  var el=document.getElementById('ex_dupe_warn');if(el){if(dups.length){el.style.display='block';el.textContent='同名のEX能力が重複しています：'+dups.join('、');}else el.style.display='none';}
+}
+function cntAct(pre,cnt){var n=0;for(var i=0;i<cnt;i++){var nm=getN(pre+i);if(nm&&nm!=='（なし）')n++;}return n;}
+function chkLim(){
+  var over=(cntAct('weapon_af',8)+cntAct('weapon_ex',3))>8;
+  var w=document.getElementById('affix_warn');if(w)w.style.display=over?'block':'none';
+  for(var i=0;i<8;i++){var r=document.getElementById('row_weapon_af'+i);var n=getN('weapon_af'+i);if(r)r.style.outline=over&&n!=='（なし）'?'1px solid #f8717166':'none';}
+  for(var j=0;j<3;j++){var r2=document.getElementById('row_weapon_ex'+j);var m=getN('weapon_ex'+j);if(r2)r2.style.outline=over&&m!=='（なし）'?'1px solid #f8717166':'none';}
+}
+
+// ==================== 計算 ====================
+function gv(id){var el=document.getElementById(id);return el?parseFloat(el.value)||0:0;}
+function onWpn(sel){
+  var w=WEAPONS[parseInt(sel.value)];
+  var el=document.getElementById('weapon_fl');if(el)el.value=w.fl||0;
+  var lbl=document.getElementById('weapon_fl_label');if(lbl)lbl.textContent=w.fl?w.fl+'% 〜 100%':'—';
+  calc();
+}
+function onAmr(sel,gid){var a=ARMORS[parseInt(sel.value)];ARMOR_BASE.forEach(function(st){var el=document.getElementById(gid+'_'+st.k);if(el)el.value=a[st.k]||0;});calc();}
+function copyAff(from,to){
+  for(var i=0;i<8;i++){
+    var fp=from+'_af'+i,tp=to+'_af'+i,fb=document.getElementById(fp+'_btn'),tb=document.getElementById(tp+'_btn');
+    if(fb&&tb)tb.textContent=fb.textContent;
+    ALL_STATS.forEach(function(st){var fe=document.getElementById(fp+'_'+st.k),te=document.getElementById(tp+'_'+st.k);if(fe&&te)te.value=fe.value;});
+  }
+  updDupe(to);calc();
+  document.querySelectorAll('.tab-btn').forEach(function(b){if(b.textContent===GEAR.find(function(g){return g.id===to;}).label)b.click();});
+}
+function calcGear(g){
+  var res={};
+  ['s','r','t'].forEach(function(k){
+    var m=!g.isWeapon?(1+gv(g.id+'_'+k)/100):1;
+    for(var i=0;i<8;i++)m*=(1+gv(g.id+'_af'+i+'_'+k)/100);
+    if(g.isWeapon)for(var j=0;j<3;j++)m*=(1+gv(g.id+'_ex'+j+'_'+k)/100);
+    res[k]=m;
+  });
+  ['hp','pp'].forEach(function(k){
+    var s=!g.isWeapon?gv(g.id+'_'+k):0;
+    for(var i=0;i<8;i++)s+=gv(g.id+'_af'+i+'_'+k);
+    if(g.isWeapon)for(var j=0;j<3;j++)s+=gv(g.id+'_ex'+j+'_'+k);
+    res[k]=s;
+  });
+  var fl=g.isWeapon?(1+gv('weapon_fl')/100):1;
+  for(var i=0;i<8;i++)fl*=(1+gv(g.id+'_af'+i+'_fl')/100);
+  if(g.isWeapon)for(var j=0;j<3;j++)fl*=(1+gv(g.id+'_ex'+j+'_fl')/100);
+  res.fl=fl;
+  var dr=!g.isWeapon?(1-gv(g.id+'_dr')/100):1;
+  for(var i=0;i<8;i++){var v=gv(g.id+'_af'+i+'_dr');if(v>0)dr*=(1-v/100);}
+  if(g.isWeapon)for(var j=0;j<3;j++){var v2=gv(g.id+'_ex'+j+'_dr');if(v2>0)dr*=(1-v2/100);}
+  res.dr=dr;
+  var td=1;
+  for(var i=0;i<8;i++){var v3=gv(g.id+'_af'+i+'_td');if(v3>0)td*=(1-v3/100);}
+  if(g.isWeapon)for(var j=0;j<3;j++){var v4=gv(g.id+'_ex'+j+'_td');if(v4>0)td*=(1-v4/100);}
+  res.td=td;
+  return res;
+}
+function fmtM(m){return m.toFixed(4);}
+function countUniqueAffixes(){
+  var names=new Set();
+  GEAR.filter(function(g){return !g.isRing;}).forEach(function(g){
+    for(var i=0;i<8;i++){var n=getN(g.id+'_af'+i);if(n&&n!=='（なし）')names.add(n);}
+    if(g.isWeapon){for(var j=0;j<3;j++){var m=getN('weapon_ex'+j);if(m&&m!=='（なし）')names.add(m);}}
+  });
+  return Math.min(names.size,20);
+}
+
+// ==================== ダメージ期待値指数 ====================
+function calcDmgIndex(tot){
+  var wpnSel=document.querySelector('#panel_weapon .sel-wrap select');
+  var wpnIdx=wpnSel?parseInt(wpnSel.value)||0:0,wpn=WEAPONS[wpnIdx]||WEAPONS[0];
+  if(!wpn.atk)return null;
+  var wtSel=document.getElementById('weapon_type_sel'),wtIdx=wtSel?parseInt(wtSel.value)||0:0,wt=WEAPON_TYPES[wtIdx]||WEAPON_TYPES[0];
+  var powMul=wt.atk==='s'?tot.s:wt.atk==='r'?tot.r:wt.atk==='t'?tot.t:wt.atk==='sr'?Math.max(tot.s,tot.r):wt.atk==='st'?Math.max(tot.s,tot.t):((tot.s||1)+(tot.r||1)+(tot.t||1))/3;
+  var critRate=15+(wpn.critBonus||0);
+  var fixaEl=document.getElementById('fixa_sel'),fixaLvEl=document.getElementById('fixa_lv');
+  var fixaIdx=fixaEl?parseInt(fixaEl.value)||0:0,fixaLv=fixaLvEl?parseInt(fixaLvEl.value)||0:0,fixa=FIXAS[fixaIdx]||FIXAS[0];
+  if(fixa.critBonus)critRate+=fixa.critBonus[fixaLv]||0;
+  if(togSlState)critRate+=10;
+  critRate+=togGearState*2;
+  if(togSubSlState)critRate+=5;
+  critRate=Math.min(critRate,100)/100;
+  var critPowBonus=fixa.n==='フィクサ・テルミナ'&&fixa.rows&&fixa.rows[0]?(fixa.rows[0].vals[fixaLv]||0)/100:0;
+  var critMul=1.2*(1+critPowBonus);
+  var latentMul=1+(wpn.latentPow||0)/100;
+  var fixaPow=0;
+  if(fixa.rows&&fixa.rows.length){fixa.rows.forEach(function(row){
+    if(row.label==='PB威力+'||row.label==='クリティカル発生率+'||row.label==='クリティカル時の威力+')return;
+    var isWA=fixa.n==='フィクサ・ウィクス'||fixa.n==='フィクサ・アンウィクス';
+    if(row.isCond&&!isWA&&row.label!=='_abandak')return;
+    if(row.label==='_abandak'){fixaPow+=Math.round(countUniqueAffixes()*(row.vals[fixaLv]||0)*1000)/1000;return;}
+    fixaPow+=row.vals[fixaLv]||0;
+  });}
+  var fixaMul=1+fixaPow/100;
+  var t1El=document.getElementById('ring_t1'),t1LvEl=document.getElementById('ring_t1_lv');
+  var t1idx=t1El?parseInt(t1El.value)||0:0,t1lv=t1LvEl?parseInt(t1LvEl.value)||0:0,t1=RING_TYPE1[t1idx]||RING_TYPE1[0];
+  var ringPow=(t1.pow&&t1.pow.length)?(t1.pow[Math.min(t1lv,t1.pow.length-1)]||[0,0])[0]||0:0,ringMul=1+ringPow/100;
+  var ringCondPow=(t1.pow&&t1.pow.length)?(t1.pow[Math.min(t1lv,t1.pow.length-1)]||[0,0])[1]||0:0;
+  _ringCondMul=1+ringCondPow/100;
+  var exCond=1;
+  for(var xi=0;xi<3;xi++){var xn=getN('weapon_ex'+xi);if(!xn||xn==='（なし）')continue;var xp=EX_PRESETS.find(function(x){return x.n===xn;});if(xp&&xp.condVal)exCond*=(1+xp.condVal/100);}
+  _exCondMul=exCond;
+  var totalPowMul=powMul*latentMul*fixaMul*ringMul*(togExCond?exCond:1)*(togRingCond?_ringCondMul:1);
+  var flBase=gv('weapon_fl'),flMul=1;
+  GEAR.filter(function(g){return !g.isRing;}).forEach(function(g){
+    for(var i=0;i<8;i++)flMul*=(1+gv(g.id+'_af'+i+'_fl')/100);
+    if(g.isWeapon)for(var j=0;j<3;j++)flMul*=(1+gv(g.id+'_ex'+j+'_fl')/100);
+  });
+  var flFin=Math.min(flBase*flMul,100)/100;
+  var normalCoef=(1-critRate)*(flFin+1)/2,critCoef=critRate*critMul,adjCoef=normalCoef+critCoef;
+  return{dmgIndex:Math.round(wpn.atk*totalPowMul*adjCoef),atk:wpn.atk,totalPowMul:totalPowMul,powMul:powMul,latentMul:latentMul,fixaMul:fixaMul,ringMul:ringMul,exCond:exCond,adjCoef:adjCoef,normalCoef:normalCoef,critCoef:critCoef,critRate:critRate,critMul:critMul,flFin:flFin,wt:wt};
+}
+function buildDmgIndexHTML(tot){
+  var d=calcDmgIndex(tot);
+  if(!d){return '<div class="result-card" style="margin-top:8px;border-color:#1e2535"><div style="font-size:13px;font-weight:500;color:#475569;margin-bottom:4px">ダメージ期待値指数</div><div style="font-size:12px;color:#334155">武器を選択すると計算されます</div></div>';}
+  var atkLabel=d.wt.atk==='s'?'打撃':d.wt.atk==='r'?'射撃':d.wt.atk==='t'?'法撃':d.wt.atk==='sr'?'打撃/射撃':d.wt.atk==='st'?'打撃/法撃':'全属性平均';
+  var critPct=Math.round(d.critRate*100);
+  function row(label,val,color,sub){
+    return '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:1px solid #1e2535">'
+      +'<span style="font-size:11px;color:#64748b">'+label+'</span>'
+      +'<span style="font-size:12px;font-weight:600;color:'+(color||'#e2e8f0')+'">'+(sub?'<span style="font-size:10px;color:#475569;margin-right:6px">'+sub+'</span>':'')+val+'</span></div>';
+  }
+  return '<div class="result-card" style="margin-top:8px;border-color:#7c3aed33">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">'
+    +'<div style="font-size:13px;font-weight:500;color:#f1f5f9">ダメージ期待値指数</div>'
+    +'<button id="slot_compare_btn" onclick="togSlotCompare()" style="padding:4px 10px;border-radius:6px;border:1px solid #334155;background:#1e2535;color:#94a3b8;font-size:11px;cursor:pointer">'+(showSlotCompare?'比較を閉じる':'他スロットと比較')+'</button>'
+    +'</div>'
+    +'<div style="text-align:center;background:#7c3aed18;border:1px solid #7c3aed44;border-radius:10px;padding:14px;margin-bottom:12px">'
+    +'<div style="font-size:11px;color:#7c3aed88;margin-bottom:4px;letter-spacing:.06em">期待値指数　<span style="color:#a78bfa99">参照属性：'+atkLabel+'</span></div>'
+    +'<div style="font-size:36px;font-weight:700;color:#a78bfa">'+d.dmgIndex.toLocaleString()+'</div>'
+    +'<div style="font-size:10px;color:#475569;margin-top:4px">武器攻撃力 '+d.atk.toLocaleString()+' × 威力倍率 ×'+d.totalPowMul.toFixed(4)+' × 補正係数 '+(d.adjCoef*100).toFixed(2)+'%</div>'
+    +'</div>'
+    +'<div style="font-size:10px;font-weight:500;color:#475569;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">確定威力倍率内訳</div>'
+    +'<div style="background:#151a25;border:1px solid #1e2535;border-radius:8px;padding:8px 12px;margin-bottom:10px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1e2535">'
+    +'<span style="font-size:11px;color:#64748b">特殊能力・EX（'+atkLabel+'）</span>'
+    +'<span style="font-size:12px;font-weight:600;color:#a78bfa">×'+d.powMul.toFixed(4)+'</span></div>'
+    +(_exCondMul>1?'<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0 4px 12px;border-bottom:1px solid #1e2535">'
+    +'<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:10px;color:'+(togExCond?'#e05080':'#475569')+'">'
+    +'<input type="checkbox" onchange="setTogExCond(this)" '+(togExCond?'checked':'')+' style="width:12px;height:12px;accent-color:#e05080;cursor:pointer">EX条件付き威力上昇を有効</label>'
+    +(togExCond?'<span style="font-size:11px;font-weight:600;color:#e05080">×'+d.exCond.toFixed(4)+'</span>':'<span></span>')
+    +'</div>':'')
+    +row('武器潜在','×'+d.latentMul.toFixed(4),'#fde047')
+    +row('プリセット能力（確定分）','×'+d.fixaMul.toFixed(4),'#f59e0b')
+    +'<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1e2535">'
+    +'<span style="font-size:11px;color:#64748b">リングタイプ1（常時）</span>'
+    +'<span style="font-size:12px;font-weight:600;color:#34d399">×'+d.ringMul.toFixed(4)+'</span></div>'
+    +(_ringCondMul>1?'<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0 4px 12px;border-bottom:1px solid #1e2535">'
+    +'<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:10px;color:'+(togRingCond?'#34d399':'#475569')+'">'
+    +'<input type="checkbox" onchange="setTogRingCond(this)" '+(togRingCond?'checked':'')+' style="width:12px;height:12px;accent-color:#34d399;cursor:pointer">タイプ１条件付き威力上昇を有効</label>'
+    +(togRingCond?'<span style="font-size:11px;font-weight:600;color:#34d399">×'+_ringCondMul.toFixed(4)+'</span>':'<span></span>')
+    +'</div>':'')
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;margin-top:2px">'
+    +'<span style="font-size:11px;color:#a78bfa88">合計</span><span style="font-size:14px;font-weight:700;color:#a78bfa">×'+d.totalPowMul.toFixed(4)+'</span></div></div>'
+    +'<div style="font-size:10px;font-weight:500;color:#475569;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">クリティカル率補正</div>'
+    +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#151a25;border:1px solid #1e2535;border-radius:8px">'
+    +'<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:#94a3b8;user-select:none">'
+    +'<input type="checkbox" onchange="setTogSl(this)" '+(togSlState?'checked':'')+' style="width:14px;height:14px;accent-color:#a78bfa;cursor:pointer">'
+    +'Sl <span style="color:#a78bfa;font-weight:600">+10%</span><span style="color:#334155;font-size:10px;margin-left:3px">常時5%+ボス5%</span></label>'
+    +'<div style="display:flex;align-items:center;gap:4px;padding-left:8px;border-left:1px solid #1e2535">'
+    +'<span style="font-size:11px;color:'+(togSlState?'#64748b':'#2a3547')+'">ギア</span>'
+    +'<select onchange="setTogGear(this)" '+(togSlState?'':'disabled')+' style="background:#0f1117;border:1px solid #334155;border-radius:6px;color:'+(togSlState?'#a78bfa':'#2a3547')+';font-size:11px;padding:2px 4px;outline:none;cursor:'+(togSlState?'pointer':'not-allowed')+'">'
+    +'<option value="0"'+(togGearState===0?' selected':'')+'>0段</option>'
+    +'<option value="1"'+(togGearState===1?' selected':'')+'>1段+2%</option>'
+    +'<option value="2"'+(togGearState===2?' selected':'')+'>2段+4%</option>'
+    +'<option value="3"'+(togGearState===3?' selected':'')+'>3段+6%</option>'
+    +'<option value="4"'+(togGearState===4?' selected':'')+'>4段+8%</option>'
+    +'<option value="5"'+(togGearState===5?' selected':'')+'>5段+10%</option>'
+    +'</select></div>'
+    +'<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:#94a3b8;user-select:none;padding-left:8px;border-left:1px solid #1e2535">'
+    +'<input type="checkbox" onchange="setTogSubSl(this)" '+(togSubSlState?'checked':'')+' style="width:14px;height:14px;accent-color:#a78bfa;cursor:pointer">'
+    +'サブSl <span style="color:#a78bfa;font-weight:600">+5%</span><span style="color:#334155;font-size:10px;margin-left:3px">常時3%+ボス2%</span></label>'
+    +'<span style="margin-left:auto;font-size:11px;color:#64748b">クリ率 '+critPct+'%</span>'
+    +'</div>'
+    +'<div style="font-size:10px;font-weight:500;color:#475569;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">補正期待係数内訳</div>'
+    +'<div style="background:#151a25;border:1px solid #1e2535;border-radius:8px;padding:8px 12px">'
+    +row('通常時（'+(100-critPct)+'%）','+'+(d.normalCoef*100).toFixed(2)+'%','#94a3b8','下限'+(d.flFin*100).toFixed(1)+'%〜100% 平均'+(((d.flFin+1)/2)*100).toFixed(1)+'%')
+    +row('クリ率　('+critPct+'%) <span style="font-size:10px;color:#475569;font-weight:400">*デフォルト15%＝基本5%+Brアドオン10%想定</span>　クリ倍率×'+d.critMul.toFixed(3),'+'+(d.critCoef*100).toFixed(2)+'%','#fbbf24','確定100% ×'+d.critMul.toFixed(3)+'= '+(d.critMul*100).toFixed(1)+'%')
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;margin-top:2px">'
+    +'<span style="font-size:11px;color:#94a3b888">合計</span><span style="font-size:14px;font-weight:700;color:#e2e8f0">'+(d.adjCoef*100).toFixed(2)+'%</span></div></div>'
+    +'<div id="slot_compare_area"></div>'
+    +'</div>';
+}
+
+// ==================== 参考情報 ====================
+function makeInfoCard(title,color,lines){
+  if(!lines||!lines.length)return '';
+  return '<div style="margin-top:8px;background:'+color+'11;border:1px solid '+color+'44;border-radius:8px;padding:10px 12px">'
+    +'<div style="font-size:10px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:'+color+'88;margin-bottom:6px">'+title+'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:4px">'
+    +lines.map(function(l){
+      if(l.raw)return l.eff;
+      var nameColor=l.highlight?color:(l.isTitle?color:'#e2e8f0');
+      return '<div style="padding:5px 8px;border-radius:4px;background:'+(l.highlight?color+'22':'#1e2535')+';border:1px solid '+(l.highlight?color+'55':'transparent')+'">'
+        +(l.name?'<div style="font-size:'+(l.highlight?'14px':'11px')+';font-weight:'+(l.highlight?'600':'500')+';color:'+nameColor+'">'+l.name+'</div>':'')
+        +(l.eff?'<div style="font-size:11px;color:#e2e8f0;font-weight:500;margin-top:4px;line-height:1.6">'+l.eff+'</div>':'')
+        +'</div>';
+    }).join('')+'</div></div>';
+}
+function buildRefHTML(totS,totR,totT){
+  var html='',wpnSel=document.querySelector('#panel_weapon .sel-wrap select');
+  var wpnIdx=wpnSel?parseInt(wpnSel.value)||0:0,wpn=WEAPONS[wpnIdx]||WEAPONS[0];
+  if(wpn.latent&&wpn.latentEff){
+    var ll=[];ll.push({name:wpn.latent,eff:'',highlight:false,isTitle:true});
+    wpn.latentEff.split('/').map(function(s){return s.trim();}).filter(Boolean).forEach(function(line){ll.push({name:line,eff:'',highlight:line.startsWith('威力'),isTitle:false});});
+    html+=makeInfoCard('武器潜在能力','#fde047',ll);
+  }
+  var exLines=[],exCondVals=[];
+  for(var ei=0;ei<3;ei++){
+    var en=getN('weapon_ex'+ei);if(!en||en==='（なし）')continue;
+    var ep=EX_PRESETS.find(function(x){return x.n===en;});if(!ep||!ep.cond)continue;
+    var hasPow=!!(ep.condVal&&ep.maxPow),effHTML=ep.cond.split('／').map(function(s){return s.trim();}).filter(Boolean).join('<br>');
+    if(hasPow){effHTML+='<br><span style="display:inline-block;margin-top:2px;background:#e0508033;border:1px solid #e0508066;border-radius:4px;padding:1px 6px;font-size:11px;color:#e05080;font-weight:600">+'+ep.condVal+'% / 最大+'+ep.maxPow+'%</span>';exCondVals.push(ep.condVal);}
+    exLines.push({name:en,eff:effHTML,highlight:false,isTitle:true});
+  }
+  if(exLines.length){
+    var exCardLines=exLines.slice();
+    if(exCondVals.length){
+      var exCondMul=exCondVals.reduce(function(a,v){return a*(1+v/100);},1);
+      var exDetail=exCondVals.map(function(v){return'×'+(1+v/100).toFixed(4);}).join(' ');
+      var exBaseS=1,exBaseR=1,exBaseT=1;
+      for(var ei2=0;ei2<3;ei2++){exBaseS*=(1+gv('weapon_ex'+ei2+'_s')/100);exBaseR*=(1+gv('weapon_ex'+ei2+'_r')/100);exBaseT*=(1+gv('weapon_ex'+ei2+'_t')/100);}
+      var baseAvg=(exBaseS+exBaseR+exBaseT)/3,theoryPct=((baseAvg*exCondMul-1)*100).toFixed(2),basePct=((baseAvg-1)*100).toFixed(2),condTotal=((exCondMul-1)*100).toFixed(2);
+      var theoryHTML='<div style="margin-top:6px;padding:8px 10px;border-radius:6px;background:#e0508011;border:1px solid #e0508044">'
+        +'<div style="font-size:10px;color:#e0508088;margin-bottom:8px">条件付き威力・理論最大（全条件達成時）</div>'
+        +'<div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">'
+        +'<div style="text-align:center"><div style="font-size:22px;font-weight:600;color:#e05080">+'+basePct+'<span style="font-size:13px">%</span></div><div style="font-size:10px;color:#475569;margin-top:2px">ベース</div></div>'
+        +'<div style="font-size:20px;color:#334155;padding-bottom:14px">+</div>'
+        +'<div style="text-align:center;background:#e0508022;border:1px solid #e0508066;border-radius:8px;padding:4px 14px"><div style="font-size:26px;font-weight:700;color:#e05080">+'+condTotal+'<span style="font-size:14px">%</span></div><div style="font-size:10px;color:#e0508088;margin-top:2px">条件付き</div></div>'
+        +'<div style="font-size:20px;color:#334155;padding-bottom:14px">=</div>'
+        +'<div style="text-align:center"><div style="font-size:22px;font-weight:600;color:#e05080">+'+theoryPct+'<span style="font-size:13px">%</span></div><div style="font-size:10px;color:#475569;margin-top:2px">最大</div></div>'
+        +'</div><div style="font-size:10px;color:#475569;margin-top:6px;text-align:center">EX能力基礎合計平均 ×'+baseAvg.toFixed(4)+' '+exDetail+'</div></div>';
+      exCardLines.push({name:'',eff:theoryHTML,highlight:false,isTitle:false,raw:true});
+    }
+    html+=makeInfoCard('EX能力','#e05080',exCardLines);
+  }
+  var fixaEl=document.getElementById('fixa_sel'),fixaLvEl=document.getElementById('fixa_lv');
+  var fixaIdx=fixaEl?parseInt(fixaEl.value)||0:0,fixaLv=fixaLvEl?parseInt(fixaLvEl.value)||0:0,fixa=FIXAS[fixaIdx]||FIXAS[0];
+  if(fixa&&fixa.rows&&fixa.rows.length){
+    var baseVal=0,condVal2=0,condLabel='',fixaLines=[];
+    fixaLines.push({name:fixa.n+' Lv.'+(fixaLv+1),eff:'',highlight:false,isTitle:true});
+    fixa.rows.forEach(function(row){
+      var v=row.vals[fixaLv],effStr;
+      if(row.label==='_abandak'){var cnt=countUniqueAffixes(),bonus=Math.round(cnt*v*1000)/1000;effStr='特殊能力の種類数×'+v+'%威力上昇（現在'+cnt+'種 → +'+bonus+'%　最大+'+(v*20)+'%）';if(row.isCond){condVal2=bonus;condLabel='能力種類数依存';}}
+      else{effStr=row.label+(typeof v==='number'?v+'%':v);if(!row.isCond&&row.label==='威力+')baseVal=typeof v==='number'?v:0;if(row.isCond){condVal2=typeof v==='number'?v:0;condLabel=row.label.replace(/威力\+/,'').trim()+'時';}}
+      fixaLines.push({name:effStr,eff:'',highlight:true,isTitle:false});
+    });
+    if(condVal2>0&&baseVal>0){
+      var baseAvgF=((totS||1)+(totR||1)+(totT||1))/3,maxMulF=(1+baseVal/100)*(1+condVal2/100);
+      var fixaTheoryHTML='<div style="margin-top:6px;padding:8px 10px;border-radius:6px;background:#f59e0b11;border:1px solid #f59e0b44">'
+        +'<div style="font-size:10px;color:#f59e0b88;margin-bottom:8px">理論最大（全条件達成時）</div>'
+        +'<div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">'
+        +'<div style="text-align:center"><div style="font-size:22px;font-weight:600;color:#f59e0b">+'+baseVal.toFixed(2)+'<span style="font-size:13px">%</span></div><div style="font-size:10px;color:#475569;margin-top:2px">常時</div></div>'
+        +'<div style="font-size:20px;color:#334155;padding-bottom:14px">+</div>'
+        +'<div style="text-align:center"><div style="font-size:22px;font-weight:600;color:#f59e0b">+'+condVal2.toFixed(2)+'<span style="font-size:13px">%</span></div><div style="font-size:10px;color:#475569;margin-top:2px">'+condLabel+'</div></div>'
+        +'<div style="font-size:20px;color:#334155;padding-bottom:14px">=</div>'
+        +'<div style="text-align:center;background:#f59e0b22;border:1px solid #f59e0b66;border-radius:8px;padding:4px 14px"><div style="font-size:26px;font-weight:700;color:#f59e0b">+'+((maxMulF-1)*100).toFixed(2)+'<span style="font-size:14px">%</span></div><div style="font-size:10px;color:#f59e0b88;margin-top:2px">最大（プリセット単体）</div></div>'
+        +'</div><div style="font-size:10px;color:#475569;margin-top:6px;text-align:center">全装備合算時の最大：+'+((baseAvgF*maxMulF-1)*100).toFixed(2)+'%</div></div>';
+      fixaLines.push({name:'',eff:fixaTheoryHTML,highlight:false,isTitle:false,raw:true});
+    }
+    html+=makeInfoCard('プリセット能力','#f59e0b',fixaLines);
+  }
+  var t1El=document.getElementById('ring_t1'),t2El=document.getElementById('ring_t2');
+  var t1LvEl=document.getElementById('ring_t1_lv'),t2LvEl=document.getElementById('ring_t2_lv');
+  var t1idx2=t1El?parseInt(t1El.value)||0:0,t2idx=t2El?parseInt(t2El.value)||0:0;
+  var t1lv2=t1LvEl?parseInt(t1LvEl.value)||0:0,t2lv=t2LvEl?parseInt(t2LvEl.value)||0:0;
+  var t1b=RING_TYPE1[t1idx2]||RING_TYPE1[0],t2=RING_TYPE2[t2idx]||RING_TYPE2[0];
+  function getEff(r,lv){if(!r||!r.eff)return '';return Array.isArray(r.eff)?(r.eff[lv]||r.eff[r.eff.length-1]):r.eff;}
+  var t1eff=getEff(t1b,t1lv2),t2eff=Array.isArray(t2.eff)?(t2.eff[t2lv]||t2.eff[t2.eff.length-1]):t2.eff;
+  var t1pow=(t1b.pow&&Array.isArray(t1b.pow))?t1b.pow[Math.min(t1lv2,t1b.pow.length-1)]:null;
+  var ringLines=[];
+  if(t1eff)ringLines.push({name:t1b.n+' +'+t1lv2,eff:t1eff.split('／').map(function(s){return s.trim();}).filter(Boolean).join('<br>'),highlight:false,isTitle:true});
+  if(t2eff)ringLines.push({name:t2.n+' +'+t2lv,eff:t2eff.split('／').map(function(s){return s.trim();}).filter(Boolean).join('<br>'),highlight:false,isTitle:true});
+  if(t1pow&&t1pow[0]>0){
+    var maxPct=((1+t1pow[0]/100)*(1+t1pow[1]/100)-1)*100;
+    var ringTheoryHTML='<div style="margin-top:6px;padding:8px 10px;border-radius:6px;background:#10b98111;border:1px solid #10b98144">'
+      +'<div style="font-size:10px;color:#10b98188;margin-bottom:8px">リング最大威力（全条件達成時・乗算）</div>'
+      +'<div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">'
+      +'<div style="text-align:center"><div style="font-size:22px;font-weight:600;color:#10b981">+'+t1pow[0].toFixed(2)+'<span style="font-size:13px">%</span></div><div style="font-size:10px;color:#475569;margin-top:2px">常時</div></div>'
+      +'<div style="font-size:20px;color:#334155;padding-bottom:14px">+</div>'
+      +'<div style="text-align:center"><div style="font-size:22px;font-weight:600;color:#10b981">+'+t1pow[1].toFixed(2)+'<span style="font-size:13px">%</span></div><div style="font-size:10px;color:#475569;margin-top:2px">条件達成</div></div>'
+      +'<div style="font-size:20px;color:#334155;padding-bottom:14px">=</div>'
+      +'<div style="text-align:center;background:#10b98122;border:1px solid #10b98166;border-radius:8px;padding:4px 14px"><div style="font-size:26px;font-weight:700;color:#10b981">+'+maxPct.toFixed(2)+'<span style="font-size:14px">%</span></div><div style="font-size:10px;color:#10b98188;margin-top:2px">最大（乗算）</div></div>'
+      +'</div><div style="font-size:10px;color:#475569;margin-top:6px;text-align:center">×'+(1+t1pow[0]/100).toFixed(4)+' × '+(1+t1pow[1]/100).toFixed(4)+'　打撃・射撃・法撃すべてに適用</div></div>';
+    ringLines.push({name:'',eff:ringTheoryHTML,highlight:false,isTitle:false,raw:true});
+  }
+  if(ringLines.length)html+=makeInfoCard('スキルリング','#10b981',ringLines);
+  if(!html)return '';
+  return '<div class="ref-card"><div class="ref-title">参考情報（ステータス非反映）</div><div class="ref-note">以下は計算に含まれない条件付き効果です</div>'+html+'</div>';
+}
+
+// ==================== メイン計算 ====================
+function calc(){
+  var results=GEAR.filter(function(g){return !g.isRing;}).map(function(g){return calcGear(g);});
+  var tot={};
+  ['s','r','t'].forEach(function(k){tot[k]=results.reduce(function(a,r){return a*r[k];},1);});
+  ['hp','pp'].forEach(function(k){tot[k]=results.reduce(function(a,r){return a+r[k];},0);});
+  var flBase=gv('weapon_fl'),flMul=1;
+  GEAR.filter(function(g){return !g.isRing;}).forEach(function(g){
+    for(var i=0;i<8;i++)flMul*=(1+gv(g.id+'_af'+i+'_fl')/100);
+    if(g.isWeapon)for(var j=0;j<3;j++)flMul*=(1+gv(g.id+'_ex'+j+'_fl')/100);
+  });
+  var flFin=flBase*flMul,drTaken=results.reduce(function(a,r){return a*r.dr;},1);
+  tot.dr=1-drTaken;
+  _lastTot=tot;
+  var srtHTML='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">'
+    +['s','r','t'].map(function(k){
+      var lbl={s:'打撃',r:'射撃',t:'法撃'}[k],col={s:'#ff6b2b',r:'#38bfff',t:'#ffe033'}[k];
+      var bg={s:'#ff6b2b18',r:'#38bfff18',t:'#ffe03318'}[k],border={s:'#ff6b2b55',r:'#38bfff55',t:'#ffe03355'}[k];
+      var pct=((tot[k]-1)*100).toFixed(2),has=(tot[k]-1)*100>0;
+      return '<div style="background:'+bg+';border:1px solid '+border+';border-radius:10px;padding:12px 14px;text-align:center">'
+        +'<div style="font-size:11px;color:'+col+'99;margin-bottom:6px;font-weight:500;letter-spacing:.06em;text-transform:uppercase">'+lbl+'</div>'
+        +'<div style="font-size:28px;font-weight:700;color:'+(has?col:'#334155')+'">'+(has?'+'+pct:'—')+'<span style="font-size:14px;opacity:.8">%</span></div></div>';
+    }).join('')+'</div>';
+  var hpV=Math.round(tot.hp),ppV=Math.round(tot.pp);
+  var hpColor=hpV>0?'#00ff88':hpV<0?'#f87171':'#334155',ppColor=ppV>0?'#00eeff':ppV<0?'#f87171':'#334155';
+  var subStatsHTML='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:8px">'
+    +'<div style="background:#00ff8818;border:1px solid #00ff8855;border-radius:10px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">'
+    +'<span style="font-size:11px;color:#00ff8899;font-weight:500">HP</span>'
+    +'<span style="font-size:24px;font-weight:700;color:'+hpColor+'">'+(hpV!==0?(hpV>0?'+':'')+hpV:'—')+'</span></div>'
+    +'<div style="background:#00eeff18;border:1px solid #00eeff55;border-radius:10px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">'
+    +'<span style="font-size:11px;color:#00eeff99;font-weight:500">PP</span>'
+    +'<span style="font-size:24px;font-weight:700;color:'+ppColor+'">'+(ppV!==0?(ppV>0?'+':'')+ppV:'—')+'</span></div></div>';
+  var flHTML=flBase>0
+    ?'<div><div class="sp-label">威力下限補正（最終値）</div><div class="sp-sub">武器基本値 '+flBase.toFixed(2)+'% × 能力乗算 ×'+fmtM(flMul)+'</div></div>'
+     +'<div style="text-align:right"><div class="sp-val">'+flFin.toFixed(2)+'<span class="sp-unit">%</span></div><div class="sp-sub">= '+flBase.toFixed(2)+' × '+fmtM(flMul)+'</div></div>'
+    :'<div><div class="sp-label">威力下限補正（最終値）</div><div class="sp-sub" style="color:#f87171">武器が選択されていません</div></div><div style="font-size:20px;font-weight:500;color:#334155">—</div>';
+  document.getElementById('result').innerHTML=
+    '<div class="result-card"><div class="result-title">全装備合計（乗算結果）</div>'
+    +srtHTML+subStatsHTML
+    +'<div style="display:flex;flex-direction:column;gap:8px">'
+    +'<div class="sp-box fl">'+flHTML+'</div>'
+    +'<div class="sp-box dr"><div><div class="sp-label">ダメージ耐性（最終値）</div><div class="sp-sub">各防具・能力の乗算</div></div>'
+    +'<div style="text-align:right"><div class="sp-val">'+(tot.dr*100).toFixed(2)+'<span class="sp-unit">%</span></div><div class="sp-sub">受けるダメージ割合：'+(drTaken*100).toFixed(2)+'%</div></div></div>'
+    +'</div></div>'+buildRefHTML(tot.s,tot.r,tot.t)+buildDmgIndexHTML(tot);
+  if(showSlotCompare)renderSlotCompare();
+}
+
+// ==================== 保存/復元 ====================
+function collectState(){
+  var st={bi:{},af:{},exs:{},ws:'0',wts:'0',rt1:'0',rt2:'0',rt1lv:'0',rt2lv:'0',fixa:'0',fixalv:'0',tog_sl:togSlState,tog_gear:togGearState,tog_subsl:togSubSlState};
+  document.querySelectorAll('input[type="number"]').forEach(function(el){if(el.id)st.bi[el.id]=el.value;});
+  GEAR.filter(function(g){return !g.isRing;}).forEach(function(g){
+    for(var i=0;i<8;i++){var pid=g.id+'_af'+i;var b=document.getElementById(pid+'_btn');if(b)st.af[pid]=b.textContent;}
+    if(g.isWeapon){for(var j=0;j<3;j++){var pid2='weapon_ex'+j;var b2=document.getElementById(pid2+'_btn');if(b2)st.af[pid2]=b2.textContent;var sub=document.getElementById(pid2+'_sub');if(sub)st.exs[pid2]=sub.value;}}
+  });
+  var ws=document.querySelector('#panel_weapon .sel-wrap select');st.ws=ws?ws.value:'0';
+  var wts=document.getElementById('weapon_type_sel');st.wts=wts?wts.value:'0';
+  ['armor1','armor2','armor3'].forEach(function(id){var s=document.querySelector('#panel_'+id+' .sel-wrap select');st[id+'s']=s?s.value:'0';});
+  var t1=document.getElementById('ring_t1'),t2=document.getElementById('ring_t2'),t1lv=document.getElementById('ring_t1_lv'),t2lv=document.getElementById('ring_t2_lv');
+  st.rt1=t1?t1.value:'0';st.rt2=t2?t2.value:'0';st.rt1lv=t1lv?t1lv.value:'0';st.rt2lv=t2lv?t2lv.value:'0';
+  var fs=document.getElementById('fixa_sel'),fl=document.getElementById('fixa_lv');
+  st.fixa=fs?fs.value:'0';st.fixalv=fl?fl.value:'0';
+  return st;
+}
+function applyState(st){
+  var ws=document.querySelector('#panel_weapon .sel-wrap select');if(ws){ws.value=st.ws||'0';onWpn(ws);}
+  var wts=document.getElementById('weapon_type_sel');if(wts)wts.value=st.wts||'0';
+  ['armor1','armor2','armor3'].forEach(function(id){var s=document.querySelector('#panel_'+id+' .sel-wrap select');if(s){s.value=st[id+'s']||'0';onAmr(s,id);}});
+  Object.keys(st.bi||{}).forEach(function(id){var el=document.getElementById(id);if(el&&!el.readOnly)el.value=st.bi[id];});
+  Object.keys(st.af||{}).forEach(function(pid){
+    var btn=document.getElementById(pid+'_btn');if(!btn)return;btn.textContent=st.af[pid];
+    var list=pid.indexOf('_ex')!==-1?EX_PRESETS:PRESETS,p=list.find(function(x){return x.n===st.af[pid];});
+    if(p&&!p.cat&&!p.subcat)ALL_STATS.forEach(function(s){var el=document.getElementById(pid+'_'+s.k);if(el)el.value=p[s.k]||0;});
+  });
+  Object.keys(st.exs||{}).forEach(function(pid){
+    var sub=document.getElementById(pid+'_sub');if(!sub)return;sub.value=st.exs[pid]||'0';
+    if(!isExA(getN(pid))&&parseInt(sub.value)!==0){var s=EX_SUB[parseInt(sub.value)];if(s)['hp','pp','dr','td'].forEach(function(k){var el=document.getElementById(pid+'_'+k);if(el)el.value=s[k]||0;});}
+  });
+  if(st.rt1!==undefined){var t1=document.getElementById('ring_t1');if(t1)t1.value=st.rt1;}
+  if(st.rt2!==undefined){var t2=document.getElementById('ring_t2');if(t2)t2.value=st.rt2;}
+  if(st.rt1lv!==undefined){var t1lv=document.getElementById('ring_t1_lv');if(t1lv)t1lv.value=st.rt1lv;}
+  if(st.rt2lv!==undefined){var t2lv=document.getElementById('ring_t2_lv');if(t2lv)t2lv.value=st.rt2lv;}
+  if(st.fixa!==undefined){var fs2=document.getElementById('fixa_sel');if(fs2)fs2.value=st.fixa;}
+  if(st.fixalv!==undefined){var fl2=document.getElementById('fixa_lv');if(fl2)fl2.value=st.fixalv;}
+  if(st.tog_sl!==undefined)togSlState=!!st.tog_sl;
+  if(st.tog_gear!==undefined)togGearState=parseInt(st.tog_gear)||0;
+  if(st.tog_subsl!==undefined)togSubSlState=!!st.tog_subsl;
+  GEAR.filter(function(g){return !g.isRing;}).forEach(function(g){updDupe(g.id);if(g.isWeapon){chkLim();updExDupe();chkExSub();}});
+  calc();
+}
+function resetState(){
+  document.querySelectorAll('input[type="number"]').forEach(function(el){if(!el.readOnly)el.value=0;});
+  document.querySelectorAll('.dd-btn').forEach(function(btn){btn.textContent='（なし）';});
+  document.querySelectorAll('.affix-tbl.ex-tbl select').forEach(function(sel){sel.value='0';});
+  document.querySelectorAll('.sel-wrap select').forEach(function(sel){sel.value='0';});
+  ['ring_t1','ring_t2','ring_t1_lv','ring_t2_lv','weapon_type_sel'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='0';});
+  var flEl=document.getElementById('weapon_fl');if(flEl)flEl.value=0;
+  var lbl=document.getElementById('weapon_fl_label');if(lbl)lbl.textContent='—';
+  togSlState=false;togGearState=0;togSubSlState=false;
+  GEAR_SORTS={};
+  GEAR.filter(function(g){return !g.isRing;}).forEach(function(g){updDupe(g.id);if(g.isWeapon){chkLim();updExDupe();chkExSub();}});
+  calc();
+}
+document.querySelectorAll('input[type="number"]').forEach(function(el){el.addEventListener('input',calc);});
+window.addEventListener('scroll',function(){var btn=document.getElementById('back_top');if(btn)btn.style.display=window.scrollY>200?'block':'none';});
+
+// 初回ロード
+var _initData=storage.get('calc_state_0');
+if(_initData){try{applyState(JSON.parse(_initData));}catch(e){calc();}}else{calc();}
+</script>
+</body>
+</html>
