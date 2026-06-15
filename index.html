@@ -1030,7 +1030,7 @@ function buildDmgIndexHTML(tot){
   function row(label,val,color,sub){
     return '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:1px solid #1e2535">'
       +'<span style="font-size:11px;color:#64748b">'+label+'</span>'
-      +'<span style="font-size:12px;font-weight:600;color:'+(color||'#e2e8f0')+'">'+(sub?'<span style="font-size:10px;color:#475569;margin-right:6px">'+sub+'</span>':'')+val+'</span></div>';
+      +'<span style="font-size:12px;font-weight:600;color:'+(color||'#e2e8f0')+'">'+(sub?'<span class="sp-sub-note" style="font-size:10px;color:#475569;margin-right:6px">'+sub+'</span>':'')+val+'</span></div>';
   }
   return '<div class="result-card" style="margin-top:8px;border-color:#7c3aed33">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">'
@@ -1135,11 +1135,11 @@ function buildRefHTML(totS,totR,totT){
       var baseAvg=(exBaseS+exBaseR+exBaseT)/3,theoryPct=((baseAvg*exCondMul-1)*100).toFixed(2),basePct=((baseAvg-1)*100).toFixed(2),condTotal=((exCondMul-1)*100).toFixed(2);
       var theoryHTML='<div style="margin-top:6px;padding:8px 10px;border-radius:6px;background:#e0508011;border:1px solid #e0508044">'
         +'<div style="font-size:10px;color:#e0508088;margin-bottom:8px">条件付き威力・理論最大（全条件達成時）</div>'
-        +'<div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">'
+        +'<div class="ref-theory-row" style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">'
         +'<div style="text-align:center"><div style="font-size:22px;font-weight:600;color:#e05080">+'+basePct+'<span style="font-size:13px">%</span></div><div style="font-size:10px;color:#475569;margin-top:2px">ベース</div></div>'
-        +'<div style="font-size:20px;color:#334155;padding-bottom:14px">+</div>'
+        +'<div class="ref-theory-op" style="font-size:20px;color:#334155;padding-bottom:14px">+</div>'
         +'<div style="text-align:center;background:#e0508022;border:1px solid #e0508066;border-radius:8px;padding:4px 14px"><div style="font-size:26px;font-weight:700;color:#e05080">+'+condTotal+'<span style="font-size:14px">%</span></div><div style="font-size:10px;color:#e0508088;margin-top:2px">条件付き</div></div>'
-        +'<div style="font-size:20px;color:#334155;padding-bottom:14px">=</div>'
+        +'<div class="ref-theory-op" style="font-size:20px;color:#334155;padding-bottom:14px">=</div>'
         +'<div style="text-align:center"><div style="font-size:22px;font-weight:600;color:#e05080">+'+theoryPct+'<span style="font-size:13px">%</span></div><div style="font-size:10px;color:#475569;margin-top:2px">最大</div></div>'
         +'</div><div style="font-size:10px;color:#475569;margin-top:6px;text-align:center">EX能力基礎合計平均 ×'+baseAvg.toFixed(4)+' '+exDetail+'</div></div>';
       exCardLines.push({name:'',eff:theoryHTML,highlight:false,isTitle:false,raw:true});
@@ -1161,11 +1161,11 @@ function buildRefHTML(totS,totR,totT){
       var baseAvgF=((totS||1)+(totR||1)+(totT||1))/3,maxMulF=(1+baseVal/100)*(1+condVal2/100);
       var fixaTheoryHTML='<div style="margin-top:6px;padding:8px 10px;border-radius:6px;background:#f59e0b11;border:1px solid #f59e0b44">'
         +'<div style="font-size:10px;color:#f59e0b88;margin-bottom:8px">理論最大（全条件達成時）</div>'
-        +'<div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">'
+        +'<div class="ref-theory-row" style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">'
         +'<div style="text-align:center"><div style="font-size:22px;font-weight:600;color:#f59e0b">+'+baseVal.toFixed(2)+'<span style="font-size:13px">%</span></div><div style="font-size:10px;color:#475569;margin-top:2px">常時</div></div>'
-        +'<div style="font-size:20px;color:#334155;padding-bottom:14px">+</div>'
+        +'<div class="ref-theory-op" style="font-size:20px;color:#334155;padding-bottom:14px">+</div>'
         +'<div style="text-align:center"><div style="font-size:22px;font-weight:600;color:#f59e0b">+'+condVal2.toFixed(2)+'<span style="font-size:13px">%</span></div><div style="font-size:10px;color:#475569;margin-top:2px">'+condLabel+'</div></div>'
-        +'<div style="font-size:20px;color:#334155;padding-bottom:14px">=</div>'
+        +'<div class="ref-theory-op" style="font-size:20px;color:#334155;padding-bottom:14px">=</div>'
         +'<div style="text-align:center;background:#f59e0b22;border:1px solid #f59e0b66;border-radius:8px;padding:4px 14px"><div style="font-size:26px;font-weight:700;color:#f59e0b">+'+((maxMulF-1)*100).toFixed(2)+'<span style="font-size:14px">%</span></div><div style="font-size:10px;color:#f59e0b88;margin-top:2px">最大（プリセット単体）</div></div>'
         +'</div><div style="font-size:10px;color:#475569;margin-top:6px;text-align:center">全装備合算時の最大：+'+((baseAvgF*maxMulF-1)*100).toFixed(2)+'%</div></div>';
       fixaLines.push({name:'',eff:fixaTheoryHTML,highlight:false,isTitle:false,raw:true});
