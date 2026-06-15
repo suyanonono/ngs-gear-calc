@@ -786,19 +786,6 @@ function buildDD(pid,list){
     +'<div class="dd-panel" id="'+pid+'_panel"><div class="dd-search"><input id="'+pid+'_srch" placeholder="検索..." oninput="filtDD(\''+pid+'\')" autocomplete="off"></div>'
     +buildSortBtns(pid)+'<div class="dd-list" id="'+pid+'_list">'+renderItems(pid,list,'')+'</div></div></div>';
 }
-function togDD(pid){
-  var panel=document.getElementById(pid+'_panel'),btn=document.getElementById(pid+'_btn'),open=panel.classList.contains('open');closeAll();
-  if(!open){
-    var rect=btn.getBoundingClientRect();
-    var panelH=480,spaceBelow=window.innerHeight-rect.bottom,spaceAbove=rect.top;
-    var goUp=spaceBelow<panelH&&spaceAbove>spaceBelow;
-    panel.style.left=rect.left+'px';panel.style.width=Math.max(rect.width,260)+'px';
-    if(goUp){panel.style.top='';panel.style.bottom=(window.innerHeight-rect.top)+'px';}
-    else{panel.style.bottom='';panel.style.top=rect.bottom+'px';}
-    panel.classList.add('open');btn.classList.add('open');
-    setTimeout(function(){updateSortBtns(pid);var s=document.getElementById(pid+'_srch');if(s){s.value='';s.focus();}filtDD(pid);},10);
-  }
-}
 function getN(pid){var b=document.getElementById(pid+'_btn');return b?b.textContent:'（なし）';}
 function selDD(pid,idx){
   var list=pid.indexOf('_ex')!==-1?EX_PRESETS:PRESETS,p=list[idx];if(!p||p.cat||p.subcat)return;
