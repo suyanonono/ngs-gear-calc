@@ -4,12 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PSO2NGS ステータスシミュレーター</title>
+<link rel="icon" href="favicon.png">
 <meta property="og:title" content="PSO2NGS ステータスシミュレーター">
 <meta property="og:description" content="武器・ユニット・能力の合計ステータスとダメージ期待値を計算します">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ユーザー名.github.io/リポジトリ名/">
 <!-- 画像を追加する場合は下の行のコメントを外してパスを変更してください -->
-<!-- <meta property="og:image" content="https://ユーザー名.github.io/リポジトリ名/ogp.png"> -->
+<meta property="og:image" content="https://suyanonono.github.io/ngs-gear-calc/ogp.png">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{overflow-x:hidden;max-width:100%;background:#0f1117;color:#e2e8f0;font-family:sans-serif;font-size:14px;padding:.75rem;padding-bottom:60px;min-height:100vh}
@@ -1088,7 +1089,10 @@ function buildDmgIndexHTML(tot){
     +'<div style="font-size:10px;font-weight:500;color:#475569;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">補正期待係数内訳</div>'
     +'<div style="background:#151a25;border:1px solid #1e2535;border-radius:8px;padding:8px 12px">'
     +row('通常時（'+(100-critPct)+'%）','+'+(d.normalCoef*100).toFixed(2)+'%','#94a3b8','下限'+(d.flFin*100).toFixed(1)+'%〜100% 平均'+(((d.flFin+1)/2)*100).toFixed(1)+'%')
-    +row('クリ率　('+critPct+'%) <span style="font-size:10px;color:#475569;font-weight:400">*デフォルト15%＝基本5%+Brアドオン10%想定</span>　クリ倍率×'+d.critMul.toFixed(3),'+'+(d.critCoef*100).toFixed(2)+'%','#fbbf24','確定100% ×'+d.critMul.toFixed(3)+'= '+(d.critMul*100).toFixed(1)+'%')
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:1px solid #1e2535">'
+    +'<span style="font-size:11px;color:#64748b">クリ率　('+critPct+'%)<br><span class="sp-sub-note" style="font-size:10px;color:#475569;font-weight:400">*デフォルト15%＝基本5%+Brアドオン10%想定</span><br>クリ倍率×'+d.critMul.toFixed(3)+'</span>'
+    +'<span style="font-size:12px;font-weight:600;color:#fbbf24"><span class="sp-sub-note" style="font-size:10px;color:#475569;margin-right:6px">確定100% ×'+d.critMul.toFixed(3)+'= '+(d.critMul*100).toFixed(1)+'%</span>'+'+'+(d.critCoef*100).toFixed(2)+'%</span>'
+    +'</div>'
     +'<div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;margin-top:2px">'
     +'<span style="font-size:11px;color:#94a3b888">合計</span><span style="font-size:14px;font-weight:700;color:#e2e8f0">'+(d.adjCoef*100).toFixed(2)+'%</span></div></div>'
     +'<div id="slot_compare_area"></div>'
