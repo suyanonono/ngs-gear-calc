@@ -478,6 +478,7 @@ document.addEventListener('mousemove',moveTT);
 // ==================== スロット・コピー ====================
 var currentSlot=0;
 function selectSlot(slot){
+  storage.set('calc_state_'+currentSlot,JSON.stringify(collectState()));
   currentSlot=slot;
   for(var i=0;i<3;i++){var b=document.getElementById('slot_btn_'+i);if(b)b.className='slot-btn'+(i===slot?' active':'');}
   doLoad();
@@ -671,6 +672,7 @@ document.addEventListener('click',function(e){
   if(!e.target.closest('#copy_btn')&&!e.target.closest('#copy_menu')){var m=document.getElementById('copy_menu');if(m)m.style.display='none';}
 });
 document.addEventListener('mouseover',function(e){
+  if(window.innerWidth<=600)return;
   var el=e.target.closest('.dd-item[data-pidx]');
   if(!el){if(!e.target.closest('#ex_tooltip'))hideTT();return;}
   var idx=parseInt(el.getAttribute('data-pidx')),isEx=el.getAttribute('data-isex')==='true',pid=el.getAttribute('data-pid');
