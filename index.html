@@ -253,10 +253,10 @@ var PRESETS=[
   {n:"テルフィア・ドミナ",s:5,r:5,t:5,hp:45,pp:6,fl:3,dr:0,td:0},
   {n:"テラドライエル",s:5.5,r:5.5,t:5.5,hp:0,pp:4,fl:0,dr:1,td:5},
   {n:"── S系 ──",cat:true},
-  {n:"ロイスハルフィニリアS",s:6,r:6,t:6,hp:35,pp:7,fl:0,dr:0,td:0},
-  {n:"エルガグラディエ・ソールS",s:5.75,r:5.75,t:5.75,hp:30,pp:8,fl:0,dr:0,td:0},
-  {n:"エルガギガス・マエスティS",s:5.75,r:5.75,t:5.75,hp:40,pp:0,fl:0,dr:0,td:0},
-  {n:"エルガドレド・キーパS",s:3.75,r:3.75,t:3.75,hp:50,pp:5,fl:7,dr:1,td:0},
+  {n:"ロイスハルフィニリア S",s:6,r:6,t:6,hp:35,pp:7,fl:0,dr:0,td:0},
+  {n:"エルガグラディエ・ソール S",s:5.75,r:5.75,t:5.75,hp:30,pp:8,fl:0,dr:0,td:0},
+  {n:"エルガギガス・マエスティ S",s:5.75,r:5.75,t:5.75,hp:40,pp:0,fl:0,dr:0,td:0},
+  {n:"エルガドレド・キーパ S",s:3.75,r:3.75,t:3.75,hp:50,pp:5,fl:7,dr:1,td:0},
   {n:"── LC系 ──",cat:true},
   {n:"ロイスハルフィニリア LC",s:5.5,r:5.5,t:5.5,hp:35,pp:7,fl:0,dr:0,td:0},
   {n:"エルガグラディエ・ソール LC",s:5.5,r:5.5,t:5.5,hp:30,pp:8,fl:0,dr:0,td:0},
@@ -757,7 +757,7 @@ function isDisabled(p,used,isEx){
   if(p.n.endsWith(' LC')){var b1=p.n.slice(0,-3);if(used.names.indexOf(b1)!==-1||used.names.indexOf(b1+' MN')!==-1)return true;}
   else if(p.n.endsWith(' MN')){var b2=p.n.slice(0,-3);if(used.names.indexOf(b2)!==-1||used.names.indexOf(b2+' LC')!==-1)return true;}
   else if(p.n.endsWith(' S')){var b3=p.n.slice(0,-2);if(used.names.indexOf(b3)!==-1||used.names.indexOf(b3+' LC')!==-1||used.names.indexOf(b3+' MN')!==-1)return true;}
-  else{if(used.names.indexOf(p.n+' LC')!==-1||used.names.indexOf(p.n+' MN')!==-1)return true;}
+  else{if(used.names.indexOf(p.n+' LC')!==-1||used.names.indexOf(p.n+' MN')!==-1||used.names.indexOf(p.n+' S')!==-1)return true;}
   var pbase=p.n.endsWith(' LC')?p.n.slice(0,-3):p.n.endsWith(' MN')?p.n.slice(0,-3):p.n,psfx='';
   SUFFIX_GROUPS.forEach(function(sfx){if(pbase.endsWith(sfx)||pbase.endsWith('・'+sfx))psfx=sfx;});
   if(psfx){for(var bi=0;bi<used.suffixBases.length;bi++){var sb=used.suffixBases[bi];if(sb.endsWith(psfx)||sb.endsWith('・'+psfx))return true;}}
