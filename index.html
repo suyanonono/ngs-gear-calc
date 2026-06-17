@@ -738,7 +738,7 @@ function getUsedInGear(gid,excludePid){
   var PFX=['ロイス','アトス','エルガ','テルフィア','テラ'];
   function addName(n){
     if(!n||n==='（なし）')return;used.names.push(n);
-    for(var i=0;i<PFX.length;i++){if(n.startsWith(PFX[i])){used.prefixes.push(n.slice(PFX[i].length));break;}}
+    for(var i=0;i<PFX.length;i++){if(n.startsWith(PFX[i])){var rest=n.slice(PFX[i].length);if(rest.endsWith(' S'))rest=rest.slice(0,-2);else if(rest.endsWith(' LC'))rest=rest.slice(0,-3);else if(rest.endsWith(' MN'))rest=rest.slice(0,-3);used.prefixes.push(rest);break;}}
     if(n.startsWith('ユーゼ・'))used.exSeries.push('ユーゼ');
     if(n.startsWith('ユディ・'))used.exSeries.push('ユディ');
     var base=n.endsWith(' LC')?n.slice(0,-3):n.endsWith(' MN')?n.slice(0,-3):n;
