@@ -756,6 +756,7 @@ function isDisabled(p,used,isEx){
   if(!isEx){if(p.n.startsWith('ユーゼ・')&&used.exSeries.indexOf('ユーゼ')!==-1)return true;if(p.n.startsWith('ユディ・')&&used.exSeries.indexOf('ユディ')!==-1)return true;}
   if(p.n.endsWith(' LC')){var b1=p.n.slice(0,-3);if(used.names.indexOf(b1)!==-1||used.names.indexOf(b1+' MN')!==-1)return true;}
   else if(p.n.endsWith(' MN')){var b2=p.n.slice(0,-3);if(used.names.indexOf(b2)!==-1||used.names.indexOf(b2+' LC')!==-1)return true;}
+  else if(p.n.endsWith(' S')){var b3=p.n.slice(0,-2);if(used.names.indexOf(b3)!==-1||used.names.indexOf(b3+' LC')!==-1||used.names.indexOf(b3+' MN')!==-1)return true;}
   else{if(used.names.indexOf(p.n+' LC')!==-1||used.names.indexOf(p.n+' MN')!==-1)return true;}
   var pbase=p.n.endsWith(' LC')?p.n.slice(0,-3):p.n.endsWith(' MN')?p.n.slice(0,-3):p.n,psfx='';
   SUFFIX_GROUPS.forEach(function(sfx){if(pbase.endsWith(sfx)||pbase.endsWith('・'+sfx))psfx=sfx;});
