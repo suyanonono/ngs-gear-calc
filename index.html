@@ -9,7 +9,6 @@
 <meta property="og:description" content="武器・ユニット・能力の合計ステータスとダメージ期待値を計算します">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://suyanonono.github.io/ngs-gear-calc/">
-<!-- 画像を追加する場合は下の行のコメントを外してパスを変更してください -->
 <meta property="og:image" content="https://suyanonono.github.io/ngs-gear-calc/ogp.png">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -174,6 +173,10 @@ html,body{overflow-x:hidden;max-width:100%;background:#0f1117;color:#e2e8f0;font
     <span id="save_msg" style="font-size:11px;color:#64748b;display:block;height:16px;line-height:16px"></span>
   </div>
 </div>
+<div style="margin-bottom:.75rem">
+  <button onclick="runOptimizer()" id="opt_btn" style="width:100%;padding:10px;border-radius:10px;border:1px solid #7c3aed66;background:#7c3aed22;color:#a78bfa;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:.04em">⚡ 最強構成を適用</button>
+  <div id="opt_status" style="font-size:11px;color:#64748b;margin-top:4px;min-height:16px;text-align:center"></div>
+</div>
 <div class="tabs" id="tabs"></div>
 <div id="panels"></div>
 <div id="result"></div>
@@ -184,7 +187,6 @@ var showSlotCompare=false;
 var _lastTot={s:1,r:1,t:1};
 var _exCondMul=1,_ringCondMul=1;
 
-// ==================== localStorage wrapper ====================
 var storage={
   set:function(k,v){try{localStorage.setItem(k,v);return true;}catch(e){return false;}},
   get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}},
@@ -415,7 +417,6 @@ var WEAPON_TYPES=[
   {n:"ジェットブーツ",atk:'st'},{n:"タクト",atk:'t'}
 ];
 
-// ==================== ツールチップ ====================
 var _ttEl,_ttName,_ttStats,_ttBody;
 function initTT(){_ttEl=document.getElementById('ex_tooltip');_ttName=document.getElementById('tt_name');_ttStats=document.getElementById('tt_stats');_ttBody=document.getElementById('tt_body');}
 var TT_W_SINGLE=280,TT_W_COMPARE=500,TT_METER_CELLS=10;
@@ -482,7 +483,6 @@ function moveTT(e){
 function hideTT(){if(!_ttEl)initTT();_ttEl.style.display='none';}
 document.addEventListener('mousemove',moveTT);
 
-// ==================== スロット・コピー ====================
 var currentSlot=0;
 function selectSlot(slot){
   storage.set('calc_state_'+currentSlot,JSON.stringify(collectState()));
@@ -491,10 +491,7 @@ function selectSlot(slot){
   doLoad();
 }
 function showMsg(txt){var m=document.getElementById('save_msg');if(m){m.textContent=txt;setTimeout(function(){m.textContent='';},2000);}}
-function doSave(){
-  storage.set('calc_state_'+currentSlot,JSON.stringify(collectState()));
-  showMsg((currentSlot+1)+' 保存しました');
-}
+function doSave(){storage.set('calc_state_'+currentSlot,JSON.stringify(collectState()));showMsg((currentSlot+1)+' 保存しました');}
 function doLoad(){
   var res=storage.get('calc_state_'+currentSlot);
   if(!res){resetState();return;}
@@ -516,14 +513,17 @@ function copySlot(toSlot){
   document.getElementById('copy_menu').style.display='none';
 }
 
-// ==================== トグル ====================
 function setTogExCond(el){togExCond=el.checked;calc();}
 function setTogRingCond(el){togRingCond=el.checked;calc();}
 function setTogSl(el){togSlState=el.checked;if(togSlState)togSubSlState=false;if(!togSlState)togGearState=0;calc();}
 function setTogGear(el){togGearState=parseInt(el.value)||0;calc();}
 function setTogSubSl(el){togSubSlState=el.checked;if(togSubSlState)togSlState=false;calc();}
 
-// ==================== スロット比較 ====================
+var GEAR_SORTS={};
+function getGid(pid){return pid.replace(/_(?:af|ex)\d+$/,'');}
+function getSortKeys(pid){var gid=getGid(pid);if(!GEAR_SORTS[gid])GEAR_SORTS[gid]=[];return GEAR_SORTS[gid];}
+function setSortKeys(pid,keys){GEAR_SORTS[getGid(pid)]=keys;}
+
 function togSlotCompare(){
   showSlotCompare=!showSlotCompare;
   var btn=document.getElementById('slot_compare_btn');
@@ -619,11 +619,6 @@ function computeIndexFromState(st){
   }catch(e){return null;}
 }
 
-// ==================== ドロップダウン ====================
-var GEAR_SORTS={};
-function getGid(pid){return pid.replace(/_(?:af|ex)\d+$/,'');}
-function getSortKeys(pid){var gid=getGid(pid);if(!GEAR_SORTS[gid])GEAR_SORTS[gid]=[];return GEAR_SORTS[gid];}
-function setSortKeys(pid,keys){GEAR_SORTS[getGid(pid)]=keys;}
 var _modalPid=null;
 function openModal(pid){
   _modalPid=pid;
@@ -646,10 +641,7 @@ function openModal(pid){
   document.getElementById('dd_modal_overlay').classList.add('open');
   setTimeout(function(){srch.focus();},100);
 }
-function closeModal(){
-  document.getElementById('dd_modal_overlay').classList.remove('open');
-  _modalPid=null;
-}
+function closeModal(){document.getElementById('dd_modal_overlay').classList.remove('open');_modalPid=null;}
 function onModalOverlayClick(e){if(e.target===document.getElementById('dd_modal_overlay'))closeModal();}
 function filtModalDD(){
   if(!_modalPid)return;
@@ -904,7 +896,6 @@ GEAR.forEach(function(g,i){
 });
 document.getElementById('panel_weapon').classList.add('active');
 
-// ==================== 重複チェック ====================
 var PREFIXES=['ロイス','アトス','エルガ','テルフィア','テラ'];
 var EXG=[{label:'ユーゼ系',test:function(n){return n.startsWith('ユーゼ・');}},{label:'ユディ系',test:function(n){return n.startsWith('ユディ・');}}];
 function baseOP(n){if(!n||n==='（なし）')return null;for(var i=0;i<PREFIXES.length;i++)if(n.startsWith(PREFIXES[i]))return n.slice(PREFIXES[i].length);return null;}
@@ -929,7 +920,6 @@ function chkLim(){
   for(var j=0;j<3;j++){var r2=document.getElementById('row_weapon_ex'+j);var m=getN('weapon_ex'+j);if(r2)r2.style.outline=over&&m!=='（なし）'?'1px solid #f8717166':'none';}
 }
 
-// ==================== 計算 ====================
 function gv(id){var el=document.getElementById(id);return el?parseFloat(el.value)||0:0;}
 function onWpn(sel){
   var w=WEAPONS[parseInt(sel.value)];
@@ -985,7 +975,6 @@ function countUniqueAffixes(){
   return Math.min(names.size,20);
 }
 
-// ==================== ダメージ期待値指数 ====================
 function calcDmgIndex(tot){
   var wpnSel=document.querySelector('#panel_weapon .sel-wrap select');
   var wpnIdx=wpnSel?parseInt(wpnSel.value)||0:0,wpn=WEAPONS[wpnIdx]||WEAPONS[0];
@@ -1005,7 +994,8 @@ function calcDmgIndex(tot){
   var latentMul=1+(wpn.latentPow||0)/100;
   var fixaPow=0;
   if(fixa.rows&&fixa.rows.length){fixa.rows.forEach(function(row){
-    if(row.label==='PB威力+'||row.label==='クリティカル発生率+'||row.label==='クリティカル時の威力+')return;
+    if(row.label==='クリティカル発生率+'||row.label==='クリティカル時の威力+')return;
+    if(row.label==='PB威力+'){fixaPow+=(row.vals[fixaLv]||0)*0.10;return;}
     var isWA=fixa.n==='フィクサ・ウィクス'||fixa.n==='フィクサ・アンウィクス';
     if(row.isCond&&!isWA&&row.label!=='_abandak')return;
     if(row.label==='_abandak'){fixaPow+=Math.round(countUniqueAffixes()*(row.vals[fixaLv]||0)*1000)/1000;return;}
@@ -1040,6 +1030,10 @@ function buildDmgIndexHTML(tot){
       +'<span style="font-size:11px;color:#64748b">'+label+'</span>'
       +'<span style="font-size:12px;font-weight:600;color:'+(color||'#e2e8f0')+'">'+(sub?'<span class="sp-sub-note" style="font-size:10px;color:#475569;margin-right:6px">'+sub+'</span>':'')+val+'</span></div>';
   }
+  var fixaEl=document.getElementById('fixa_sel'),fixaLvEl=document.getElementById('fixa_lv');
+  var fixaIdx=fixaEl?parseInt(fixaEl.value)||0:0,fixaLv=fixaLvEl?parseInt(fixaLvEl.value)||0:0,fixa=FIXAS[fixaIdx]||FIXAS[0];
+  var pbNote='';
+  if(fixa.pbPow){var pbV=fixa.pbPow[fixaLv]||0;if(pbV>0)pbNote='<span style="font-size:10px;color:#a78bfa66;margin-left:4px">（PB威力+'+pbV+'% × 10% = +'+( pbV*0.10).toFixed(2)+'% 換算済）</span>';}
   return '<div class="result-card" style="margin-top:8px;border-color:#7c3aed33">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">'
     +'<div style="font-size:13px;font-weight:500;color:#f1f5f9">ダメージ期待値指数</div>'
@@ -1105,7 +1099,6 @@ function buildDmgIndexHTML(tot){
     +'</div>';
 }
 
-// ==================== 参考情報 ====================
 function makeInfoCard(title,color,lines){
   if(!lines||!lines.length)return '';
   return '<div style="margin-top:8px;background:'+color+'11;border:1px solid '+color+'44;border-radius:8px;padding:10px 12px">'
@@ -1212,7 +1205,6 @@ function buildRefHTML(totS,totR,totT){
   return '<div class="ref-card"><div class="ref-title">参考情報（ステータス非反映）</div><div class="ref-note">以下は計算に含まれない条件付き効果です</div>'+html+'</div>';
 }
 
-// ==================== メイン計算 ====================
 function calc(){
   var results=GEAR.filter(function(g){return !g.isRing;}).map(function(g){return calcGear(g);});
   var tot={};
@@ -1259,7 +1251,6 @@ function calc(){
   if(showSlotCompare)renderSlotCompare();
 }
 
-// ==================== 保存/復元 ====================
 function collectState(){
   var st={bi:{},af:{},exs:{},ws:'0',wts:'0',rt1:'0',rt2:'0',rt1lv:'0',rt2lv:'0',fixa:'0',fixalv:'0',tog_sl:togSlState,tog_gear:togGearState,tog_subsl:togSubSlState};
   document.querySelectorAll('input[type="number"]').forEach(function(el){if(el.id)st.bi[el.id]=el.value;});
@@ -1315,10 +1306,271 @@ function resetState(){
   GEAR.filter(function(g){return !g.isRing;}).forEach(function(g){updDupe(g.id);if(g.isWeapon){chkLim();updExDupe();chkExSub();}});
   calc();
 }
+// ==================== 最適化エンジン（焼きなまし法） ====================
+
+// 状態をフラットなスロット配列で管理
+// slots: [{gid, idx, isEx}, ...] 計35スロット
+// state: 各スロットに割り当てられた能力オブジェクト or null の配列
+
+var OPT_SLOTS=(function(){
+  var s=[];
+  for(var i=0;i<8;i++) s.push({gid:'weapon',idx:i,isEx:false});
+  for(var j=0;j<3;j++) s.push({gid:'weapon',idx:j,isEx:true});
+  ['armor1','armor2','armor3'].forEach(function(gid){
+    for(var k=0;k<8;k++) s.push({gid:gid,idx:k,isEx:false});
+  });
+  return s;
+})();
+
+function stateToAssigned(state){
+  var assigned={weapon:[],armor1:[],armor2:[],armor3:[]};
+  for(var k in assigned) for(var x=0;x<8;x++) assigned[k].push(null);
+  var ex=[null,null,null];
+  OPT_SLOTS.forEach(function(sl,i){
+    if(sl.isEx) ex[sl.idx]=state[i];
+    else assigned[sl.gid][sl.idx]=state[i];
+  });
+  return {assigned:assigned,ex:ex};
+}
+
+function calcIndexFast(state){
+  var r=stateToAssigned(state);
+  var assigned=r.assigned, exAffixes=r.ex;
+  var wpnSel=document.querySelector('#panel_weapon .sel-wrap select');
+  var wpnIdx=wpnSel?parseInt(wpnSel.value)||0:0, wpn=WEAPONS[wpnIdx]||WEAPONS[0];
+  if(!wpn.atk)return 0;
+  var wtSel=document.getElementById('weapon_type_sel');
+  var wtIdx=wtSel?parseInt(wtSel.value)||0:0, wt=WEAPON_TYPES[wtIdx]||WEAPON_TYPES[0];
+  var fixaEl=document.getElementById('fixa_sel'),fixaLvEl=document.getElementById('fixa_lv');
+  var fixaIdx=fixaEl?parseInt(fixaEl.value)||0:0,fixaLv=fixaLvEl?parseInt(fixaLvEl.value)||0:0,fixa=FIXAS[fixaIdx]||FIXAS[0];
+  var t1El=document.getElementById('ring_t1'),t1LvEl=document.getElementById('ring_t1_lv');
+  var t1idx=t1El?parseInt(t1El.value)||0:0,t1lv=t1LvEl?parseInt(t1LvEl.value)||0:0,t1=RING_TYPE1[t1idx]||RING_TYPE1[0];
+
+  var s=1,rv=1,t=1;
+  GEAR.filter(function(g){return !g.isRing;}).forEach(function(g){
+    var bs=1,br=1,bt=1;
+    if(!g.isWeapon){
+      var aEl=document.querySelector('#panel_'+g.id+' .sel-wrap select');
+      var aIdx=aEl?parseInt(aEl.value)||0:0,a=ARMORS[aIdx]||ARMORS[0];
+      bs=1+(a.s||0)/100;br=1+(a.r||0)/100;bt=1+(a.t||0)/100;
+    }
+    (assigned[g.id]||[]).forEach(function(p){if(p){bs*=(1+(p.s||0)/100);br*=(1+(p.r||0)/100);bt*=(1+(p.t||0)/100);}});
+    if(g.isWeapon) exAffixes.forEach(function(ep){if(ep){bs*=(1+(ep.s||0)/100);br*=(1+(ep.r||0)/100);bt*=(1+(ep.t||0)/100);}});
+    s*=bs;rv*=br;t*=bt;
+  });
+
+  var powMul=wt.atk==='s'?s:wt.atk==='r'?rv:wt.atk==='t'?t:wt.atk==='sr'?Math.max(s,rv):wt.atk==='st'?Math.max(s,t):(s+rv+t)/3;
+  var latentMul=1+(wpn.latentPow||0)/100;
+  var fixaPow=0;
+  if(fixa.rows) fixa.rows.forEach(function(row){
+    if(row.label==='PB威力+'||row.label==='クリティカル発生率+'||row.label==='クリティカル時の威力+')return;
+    var isWA=fixa.n==='フィクサ・ウィクス'||fixa.n==='フィクサ・アンウィクス';
+    if(row.isCond&&!isWA&&row.label!=='_abandak')return;
+    if(row.label==='_abandak'){
+      var names=new Set();
+      state.forEach(function(p){if(p&&p.n&&p.n!=='（なし）')names.add(p.n);});
+      fixaPow+=Math.round(Math.min(names.size,20)*(row.vals[fixaLv]||0)*1000)/1000;return;
+    }
+    fixaPow+=row.vals[fixaLv]||0;
+  });
+  var fixaMul=1+fixaPow/100;
+  var ringPow=(t1.pow&&t1.pow.length)?(t1.pow[Math.min(t1lv,t1.pow.length-1)]||[0,0])[0]||0:0;
+  var ringMul=1+ringPow/100;
+  var flBase=gv('weapon_fl'),flMul=1;
+  state.forEach(function(p){if(p)flMul*=(1+(p.fl||0)/100);});
+  var flFin=Math.min(flBase*flMul,100)/100;
+  var critRate=15+(wpn.critBonus||0);
+  if(fixa.critBonus)critRate+=fixa.critBonus[fixaLv]||0;
+  if(togSlState)critRate+=10;
+  critRate+=togGearState*2;
+  if(togSubSlState)critRate+=5;
+  critRate=Math.min(critRate,100)/100;
+  var critPowBonus=fixa.n==='フィクサ・テルミナ'&&fixa.rows&&fixa.rows[0]?(fixa.rows[0].vals[fixaLv]||0)/100:0;
+  var critMul=1.2*(1+critPowBonus);
+  var adjCoef=(1-critRate)*(flFin+1)/2+critRate*critMul;
+  return wpn.atk*powMul*latentMul*fixaMul*ringMul*adjCoef;
+}
+
+// 状態が制約を満たすか検証
+function isValidState(state){
+  // 武器通常+EX合計8以下
+  var wpnCount=0;
+  OPT_SLOTS.forEach(function(sl,i){if(sl.gid==='weapon'&&state[i])wpnCount++;});
+  if(wpnCount>8)return false;
+  // 重複チェック
+  var names=[],prefixes=[],exSeries=[];
+  var PFX=['ロイス','アトス','エルガ','テルフィア','テラ'];
+  for(var i=0;i<state.length;i++){
+    var p=state[i];if(!p)continue;
+    if(names.indexOf(p.n)!==-1)return false;
+    names.push(p.n);
+    for(var pi=0;pi<PFX.length;pi++){
+      if(p.n.startsWith(PFX[pi])){
+        var rest=p.n.slice(PFX[pi].length);
+        if(rest.endsWith(' S'))rest=rest.slice(0,-2);
+        else if(rest.endsWith(' LC'))rest=rest.slice(0,-3);
+        else if(rest.endsWith(' MN'))rest=rest.slice(0,-3);
+        if(prefixes.indexOf(rest)!==-1)return false;
+        prefixes.push(rest);break;
+      }
+    }
+    if(p.n.startsWith('ユーゼ・')){if(exSeries.indexOf('ユーゼ')!==-1)return false;exSeries.push('ユーゼ');}
+    if(p.n.startsWith('ユディ・')){if(exSeries.indexOf('ユディ')!==-1)return false;exSeries.push('ユディ');}
+    // 亜種重複
+    var base=p.n.endsWith(' LC')?p.n.slice(0,-3):p.n.endsWith(' MN')?p.n.slice(0,-3):p.n.endsWith(' S')?p.n.slice(0,-2):p.n;
+    if(base!==p.n&&names.indexOf(base)!==-1)return false;
+    if(names.indexOf(base+' LC')!==-1||names.indexOf(base+' MN')!==-1||names.indexOf(base+' S')!==-1)return false;
+  }
+  return true;
+}
+
+function cloneState(state){return state.slice();}
+
+function runOptimizer(){
+  var btn=document.getElementById('opt_btn'),stEl=document.getElementById('opt_status');
+  btn.disabled=true;btn.textContent='計算中...';stEl.textContent='';
+
+  setTimeout(function(){
+    try{
+      var validPresets=PRESETS.filter(function(p){return !p.cat&&!p.subcat&&p.n!=='（なし）';});
+      var validEx=EX_PRESETS.filter(function(p){return !p.cat&&!p.subcat&&p.n!=='（なし）';});
+      var null_p={n:'（なし）',s:0,r:0,t:0,hp:0,pp:0,fl:0,dr:0,td:0};
+      var N=OPT_SLOTS.length; // 35スロット
+
+      // --- 初期解：各スロットに候補をランダムに入れて制約を満たすまで試す ---
+      function randomInit(){
+        var state=[];
+        for(var i=0;i<N;i++) state.push(null);
+        // 武器8枠をランダムに選んだ能力で埋める（EX含む合計8）
+        var wpnSlots=OPT_SLOTS.map(function(s,i){return{sl:s,i:i};}).filter(function(x){return x.sl.gid==='weapon';});
+        var shuffled=wpnSlots.slice().sort(function(){return Math.random()-0.5;}).slice(0,8);
+        shuffled.forEach(function(x){
+          var pool=x.sl.isEx?validEx:validPresets;
+          state[x.i]=pool[Math.floor(Math.random()*pool.length)];
+        });
+        // 各ユニット8枠
+        ['armor1','armor2','armor3'].forEach(function(gid){
+          OPT_SLOTS.forEach(function(sl,i){
+            if(sl.gid===gid){
+              var pool=validPresets;
+              state[i]=pool[Math.floor(Math.random()*pool.length)];
+            }
+          });
+        });
+        // 制約違反なら修正：違反スロットをnullに
+        for(var rep=0;rep<5;rep++){
+          if(isValidState(state))break;
+          // 重複しているスロットを後ろから消す
+          var seen={names:[],prefixes:[],exSeries:[]};
+          var PFX=['ロイス','アトス','エルガ','テルフィア','テラ'];
+          for(var ii=0;ii<N;ii++){
+            var p=state[ii];if(!p)continue;
+            var bad=false;
+            if(seen.names.indexOf(p.n)!==-1)bad=true;
+            if(!bad)for(var pi=0;pi<PFX.length;pi++){
+              if(p.n.startsWith(PFX[pi])){
+                var rest=p.n.slice(PFX[pi].length);
+                if(rest.endsWith(' S'))rest=rest.slice(0,-2);
+                else if(rest.endsWith(' LC'))rest=rest.slice(0,-3);
+                else if(rest.endsWith(' MN'))rest=rest.slice(0,-3);
+                if(seen.prefixes.indexOf(rest)!==-1){bad=true;}
+                else seen.prefixes.push(rest);
+                break;
+              }
+            }
+            if(!bad&&p.n.startsWith('ユーゼ・')){if(seen.exSeries.indexOf('ユーゼ')!==-1)bad=true;else seen.exSeries.push('ユーゼ');}
+            if(!bad&&p.n.startsWith('ユディ・')){if(seen.exSeries.indexOf('ユディ')!==-1)bad=true;else seen.exSeries.push('ユディ');}
+            if(bad)state[ii]=null;
+            else seen.names.push(p.n);
+          }
+          // 武器枠合計8超え修正
+          var wc=0;
+          for(var wi=0;wi<N;wi++){if(OPT_SLOTS[wi].gid==='weapon'&&state[wi])wc++;}
+          for(var wi2=N-1;wi2>=0&&wc>8;wi2--){
+            if(OPT_SLOTS[wi2].gid==='weapon'&&state[wi2]){state[wi2]=null;wc--;}
+          }
+        }
+        return state;
+      }
+
+      // --- 近傍操作：1スロットをランダムに別の能力またはnullに変える ---
+      function neighbor(state){
+        var ns=cloneState(state);
+        var tries=0;
+        while(tries++<50){
+          var idx=Math.floor(Math.random()*N);
+          var sl=OPT_SLOTS[idx];
+          var pool=sl.isEx?validEx:validPresets;
+          // null か ランダム候補
+          var cand=Math.random()<0.15?null:pool[Math.floor(Math.random()*pool.length)];
+          ns[idx]=cand;
+          if(isValidState(ns))return ns;
+          ns[idx]=state[idx]; // 戻す
+        }
+        return ns; // 変更できなかった場合は元のまま
+      }
+
+      // --- 焼きなまし法 ---
+      var ITER=8000, T0=50, Tmin=0.1;
+      var current=randomInit();
+      // 初期解を貪欲で少し改善してから渡す
+      for(var pre=0;pre<N;pre++){
+        var sl0=OPT_SLOTS[pre];
+        var pool0=sl0.isEx?validEx:validPresets;
+        var bestPre=calcIndexFast(current),bestCand=current[pre];
+        for(var ci=0;ci<pool0.length;ci++){
+          var tmp=cloneState(current);tmp[pre]=pool0[ci];
+          if(isValidState(tmp)){var sc=calcIndexFast(tmp);if(sc>bestPre){bestPre=sc;bestCand=pool0[ci];}}
+        }
+        // nullも試す
+        var tmpN=cloneState(current);tmpN[pre]=null;
+        if(calcIndexFast(tmpN)>bestPre)bestCand=null;
+        current[pre]=bestCand;
+      }
+      var currentScore=calcIndexFast(current);
+      var best=cloneState(current),bestScore=currentScore;
+
+      for(var it=0;it<ITER;it++){
+        var T=T0*Math.pow(Tmin/T0,it/ITER);
+        var ns=neighbor(current);
+        var ns_score=calcIndexFast(ns);
+        var delta=ns_score-currentScore;
+        if(delta>0||Math.random()<Math.exp(delta/T)){
+          current=ns;currentScore=ns_score;
+          if(currentScore>bestScore){bestScore=currentScore;best=cloneState(current);}
+        }
+      }
+
+      // --- 結果適用 ---
+      var res=stateToAssigned(best);
+      ['weapon','armor1','armor2','armor3'].forEach(function(gid){
+        for(var i=0;i<8;i++){
+          var pid=gid+'_af'+i;
+          var p=res.assigned[gid][i]||null_p;
+          var b=document.getElementById(pid+'_btn');if(b)b.textContent=p.n;
+          ALL_STATS.forEach(function(s2){var el=document.getElementById(pid+'_'+s2.k);if(el)el.value=p[s2.k]||0;});
+        }
+        updDupe(gid);
+      });
+      for(var j=0;j<3;j++){
+        var pid2='weapon_ex'+j,ep=res.ex[j]||null_p;
+        var b2=document.getElementById(pid2+'_btn');if(b2)b2.textContent=ep.n;
+        ALL_STATS.forEach(function(s3){var el=document.getElementById(pid2+'_'+s3.k);if(el)el.value=ep[s3.k]||0;});
+      }
+      chkLim();updExDupe();chkExSub();
+      calc();
+      stEl.textContent='✓ 最適化完了！期待値指数: '+Math.round(bestScore).toLocaleString();
+      stEl.style.color='#4ade80';
+    }catch(e){
+      stEl.textContent='エラー: '+e.message;stEl.style.color='#f87171';
+    }
+    btn.disabled=false;btn.textContent='⚡ 能力最適化（期待値指数を最大化）';
+  },50);
+}
+
 document.querySelectorAll('input[type="number"]').forEach(function(el){el.addEventListener('input',calc);});
 window.addEventListener('scroll',function(){var btn=document.getElementById('back_top');if(btn)btn.style.display=window.scrollY>200?'block':'none';});
 
-// 初回ロード
 var _initData=storage.get('calc_state_0');
 if(_initData){try{applyState(JSON.parse(_initData));}catch(e){calc();}}else{calc();}
 </script>
