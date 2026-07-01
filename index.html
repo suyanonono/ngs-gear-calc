@@ -745,7 +745,7 @@ function initApp(){
 // ==================== 重複チェック ====================
 // 接頭辞を新規追加する場合はここ(OP_PREFIXES)を書き換えるだけでよい。
 // normalizeOpName/getUsedInGear/isDisabled/baseOPが全てこの配列を参照する。
-var OP_PREFIXES=['ロイス','アトス','エルガ','テルフィア','テラ','ペタ'];
+var OP_PREFIXES=['ロイス','アトス','エルガ','テルフィア','テラ'];
 var EXG=[{label:'ユーゼ系',test:function(n){return n.startsWith('ユーゼ・');}},{label:'ユディ系',test:function(n){return n.startsWith('ユディ・');}}];
 function baseOP(n){if(!n||n==='（なし）')return null;for(var i=0;i<OP_PREFIXES.length;i++)if(n.startsWith(OP_PREFIXES[i]))return n.slice(OP_PREFIXES[i].length);return null;}
 function getNames(gid){var names=[];for(var i=0;i<8;i++){var n=getN(gid+'_af'+i);if(n&&n!=='（なし）')names.push(n);}if(gid==='weapon'){for(var j=0;j<3;j++){var m=getN('weapon_ex'+j);if(m&&m!=='（なし）')names.push(m);}}return names;}
@@ -1163,12 +1163,12 @@ function loadData(){
   var loadEl=document.getElementById('load_status');
   if(loadEl)loadEl.style.display='block';
   Promise.all([
-    fetch(DATA_BASE+'weapons.json').then(function(r){if(!r.ok)throw new Error('weapons.json');return r.json();}),
-    fetch(DATA_BASE+'armors.json').then(function(r){if(!r.ok)throw new Error('armors.json');return r.json();}),
-    fetch(DATA_BASE+'rings.json').then(function(r){if(!r.ok)throw new Error('rings.json');return r.json();}),
-    fetch(DATA_BASE+'affixes.json').then(function(r){if(!r.ok)throw new Error('affixes.json');return r.json();}),
-    fetch(DATA_BASE+'ex_affixes.json').then(function(r){if(!r.ok)throw new Error('ex_affixes.json');return r.json();}),
-    fetch(DATA_BASE+'weapon_types.json').then(function(r){if(!r.ok)throw new Error('weapon_types.json');return r.json();})
+    fetch(DATA_BASE+'weapons.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('weapons.json');return r.json();}),
+    fetch(DATA_BASE+'armors.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('armors.json');return r.json();}),
+    fetch(DATA_BASE+'rings.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('rings.json');return r.json();}),
+    fetch(DATA_BASE+'affixes.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('affixes.json');return r.json();}),
+    fetch(DATA_BASE+'ex_affixes.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('ex_affixes.json');return r.json();}),
+    fetch(DATA_BASE+'weapon_types.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('weapon_types.json');return r.json();})
   ]).then(function(results){
     WEAPONS=results[0];
     ARMORS=results[1];
