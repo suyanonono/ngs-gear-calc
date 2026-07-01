@@ -43,5 +43,14 @@
     "critBonus": 5,
     "atk": 1478,
     "latentPow": 60
+  },
+  {
+    "n": "【テスト用】ダミーウェポン",
+    "fl": 50,
+    "latent": "テスト潜在",
+    "latentEff": "威力+10%",
+    "critBonus": 0,
+    "atk": 1000,
+    "latentPow": 10
   }
 ]
