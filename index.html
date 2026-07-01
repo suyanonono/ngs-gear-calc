@@ -555,12 +555,24 @@ function sortDD(pid,key){
   setSortKeys(pid,keys);updateSortBtns(pid);filtDD(pid);
 }
 function filtDD(pid){var q=document.getElementById(pid+'_srch').value;var list=pid.indexOf('_ex')!==-1?EX_PRESETS:PRESETS;document.getElementById(pid+'_list').innerHTML=renderItems(pid,list,q);}
+// 接頭辞(ロイス/アトス/エルガ/テルフィア/テラ/ペタ...)と派生表記(S/LC/MN)を
+// まとめて取り除き、系統を一意に表す「基準キー」に変換する。
+// 例: "テラドライエル" "ペタドライエル LC" → どちらも "ドライエル"
+function normalizeOpName(n){
+  if(!n||n==='（なし）')return null;
+  var body=n;
+  for(var i=0;i<OP_PREFIXES.length;i++){if(body.startsWith(OP_PREFIXES[i])){body=body.slice(OP_PREFIXES[i].length);break;}}
+  if(body.endsWith(' LC'))body=body.slice(0,-3);
+  else if(body.endsWith(' MN'))body=body.slice(0,-3);
+  else if(body.endsWith(' S'))body=body.slice(0,-2);
+  return body;
+}
 function getUsedInGear(gid,excludePid){
-  var used={names:[],prefixes:[],exSeries:[],suffixBases:[]};
-  var PFX=['ロイス','アトス','エルガ','テルフィア','テラ','ペタ'];
+  var used={names:[],baseKeys:[],exSeries:[],suffixBases:[]};
   function addName(n){
-    if(!n||n==='（なし）')return;used.names.push(n);
-    for(var i=0;i<PFX.length;i++){if(n.startsWith(PFX[i])){var rest=n.slice(PFX[i].length);if(rest.endsWith(' S'))rest=rest.slice(0,-2);else if(rest.endsWith(' LC'))rest=rest.slice(0,-3);else if(rest.endsWith(' MN'))rest=rest.slice(0,-3);used.prefixes.push(rest);break;}}
+    if(!n||n==='（なし）')return;
+    used.names.push(n);
+    used.baseKeys.push(normalizeOpName(n));
     if(n.startsWith('ユーゼ・'))used.exSeries.push('ユーゼ');
     if(n.startsWith('ユディ・'))used.exSeries.push('ユディ');
     var base=n.endsWith(' LC')?n.slice(0,-3):n.endsWith(' MN')?n.slice(0,-3):n;
@@ -573,13 +585,9 @@ function getUsedInGear(gid,excludePid){
 function isDisabled(p,used,isEx){
   if(!p||p.cat||p.subcat||p.n==='（なし）')return false;
   if(used.names.indexOf(p.n)!==-1)return true;
-  var PFX=['ロイス','アトス','エルガ','テルフィア','テラ','ペタ'];
-  for(var i=0;i<PFX.length;i++){if(p.n.startsWith(PFX[i])&&used.prefixes.indexOf(p.n.slice(PFX[i].length))!==-1)return true;}
+  var key=normalizeOpName(p.n);
+  if(key!==null&&used.baseKeys.indexOf(key)!==-1)return true;
   if(!isEx){if(p.n.startsWith('ユーゼ・')&&used.exSeries.indexOf('ユーゼ')!==-1)return true;if(p.n.startsWith('ユディ・')&&used.exSeries.indexOf('ユディ')!==-1)return true;}
-  if(p.n.endsWith(' LC')){var b1=p.n.slice(0,-3);if(used.names.indexOf(b1)!==-1||used.names.indexOf(b1+' MN')!==-1||used.names.indexOf(b1+' S')!==-1)return true;}
-  else if(p.n.endsWith(' MN')){var b2=p.n.slice(0,-3);if(used.names.indexOf(b2)!==-1||used.names.indexOf(b2+' LC')!==-1||used.names.indexOf(b2+' S')!==-1)return true;}
-  else if(p.n.endsWith(' S')){var b3=p.n.slice(0,-2);if(used.names.indexOf(b3)!==-1||used.names.indexOf(b3+' LC')!==-1||used.names.indexOf(b3+' MN')!==-1)return true;}
-  else{if(used.names.indexOf(p.n+' LC')!==-1||used.names.indexOf(p.n+' MN')!==-1||used.names.indexOf(p.n+' S')!==-1)return true;}
   var pbase=p.n.endsWith(' LC')?p.n.slice(0,-3):p.n.endsWith(' MN')?p.n.slice(0,-3):p.n,psfx='';
   SUFFIX_GROUPS.forEach(function(sfx){if(pbase.endsWith(sfx)||pbase.endsWith('・'+sfx))psfx=sfx;});
   if(psfx){for(var bi=0;bi<used.suffixBases.length;bi++){var sb=used.suffixBases[bi];if(sb.endsWith(psfx)||sb.endsWith('・'+psfx))return true;}}
@@ -735,9 +743,11 @@ function initApp(){
 }
 
 // ==================== 重複チェック ====================
-var PREFIXES=['ロイス','アトス','エルガ','テルフィア','テラ','ペタ'];
+// 接頭辞を新規追加する場合はここ(OP_PREFIXES)を書き換えるだけでよい。
+// normalizeOpName/getUsedInGear/isDisabled/baseOPが全てこの配列を参照する。
+var OP_PREFIXES=['ロイス','アトス','エルガ','テルフィア','テラ'];
 var EXG=[{label:'ユーゼ系',test:function(n){return n.startsWith('ユーゼ・');}},{label:'ユディ系',test:function(n){return n.startsWith('ユディ・');}}];
-function baseOP(n){if(!n||n==='（なし）')return null;for(var i=0;i<PREFIXES.length;i++)if(n.startsWith(PREFIXES[i]))return n.slice(PREFIXES[i].length);return null;}
+function baseOP(n){if(!n||n==='（なし）')return null;for(var i=0;i<OP_PREFIXES.length;i++)if(n.startsWith(OP_PREFIXES[i]))return n.slice(OP_PREFIXES[i].length);return null;}
 function getNames(gid){var names=[];for(var i=0;i<8;i++){var n=getN(gid+'_af'+i);if(n&&n!=='（なし）')names.push(n);}if(gid==='weapon'){for(var j=0;j<3;j++){var m=getN('weapon_ex'+j);if(m&&m!=='（なし）')names.push(m);}}return names;}
 function uniq(arr){return arr.filter(function(v,i,a){return a.indexOf(v)===i;});}
 function updDupe(gid){
