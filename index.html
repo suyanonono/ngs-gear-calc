@@ -179,7 +179,7 @@ html,body{overflow-x:hidden;max-width:100%;background:#0f1117;color:#e2e8f0;font
 <div id="result"></div>
 
 <script>
-var togSlState=false,togGearState=0,togSubSlState=false,togExCond=false,togRingCond=false;
+var togSlState=false,togGearState=0,togSubSlState=false,togExCond=false,togRingCond=false,togLatentCond=false;
 var showSlotCompare=false;
 var _lastTot={s:1,r:1,t:1};
 var _exCondMul=1,_ringCondMul=1;
@@ -341,6 +341,7 @@ function copySlot(toSlot){
 // ==================== トグル ====================
 function setTogExCond(el){togExCond=el.checked;calc();}
 function setTogRingCond(el){togRingCond=el.checked;calc();}
+function setTogLatentCond(el){togLatentCond=el.checked;calc();}
 function setTogSl(el){togSlState=el.checked;if(togSlState)togSubSlState=false;if(!togSlState)togGearState=0;calc();}
 function setTogGear(el){togGearState=parseInt(el.value)||0;calc();}
 function setTogSubSl(el){togSubSlState=el.checked;if(togSubSlState)togSlState=false;calc();}
@@ -839,9 +840,13 @@ function calcDmgIndex(tot){
   if(togSlState)critRate+=10;
   critRate+=togGearState*2;
   if(togSubSlState)critRate+=5;
+  var cl=wpn.condLatent||null;
+  var latentCondPowMul=1+((cl&&cl.pow)||0)/100;
+  var latentCondCritDmgMul=1+((cl&&cl.critDmg)||0)/100;
+  if(togLatentCond&&cl&&cl.critRate)critRate+=cl.critRate;
   critRate=Math.min(critRate,100)/100;
   var critPowBonus=fixa.n==='フィクサ・テルミナ'&&fixa.rows&&fixa.rows[0]?(fixa.rows[0].vals[fixaLv]||0)/100:0;
-  var critMul=1.2*(1+critPowBonus);
+  var critMul=1.2*(1+critPowBonus)*(togLatentCond?latentCondCritDmgMul:1);
   var latentMul=1+(wpn.latentPow||0)/100;
   var fixaPow=0;
   if(fixa.rows&&fixa.rows.length){fixa.rows.forEach(function(row){
@@ -860,7 +865,7 @@ function calcDmgIndex(tot){
   var exCond=1;
   for(var xi=0;xi<3;xi++){var xn=getN('weapon_ex'+xi);if(!xn||xn==='（なし）')continue;var xp=EX_PRESETS.find(function(x){return x.n===xn;});if(xp&&xp.condVal)exCond*=(1+xp.condVal/100);}
   _exCondMul=exCond;
-  var totalPowMul=powMul*latentMul*fixaMul*ringMul*(togExCond?exCond:1)*(togRingCond?_ringCondMul:1);
+  var totalPowMul=powMul*latentMul*fixaMul*ringMul*(togExCond?exCond:1)*(togRingCond?_ringCondMul:1)*(togLatentCond?latentCondPowMul:1);
   var flBase=gv('weapon_fl'),flMul=1;
   GEAR.filter(function(g){return !g.isRing;}).forEach(function(g){
     for(var i=0;i<8;i++)flMul*=(1+gv(g.id+'_af'+i+'_fl')/100);
@@ -868,7 +873,7 @@ function calcDmgIndex(tot){
   });
   var flFin=Math.min(flBase*flMul,100)/100;
   var normalCoef=(1-critRate)*(flFin+1)/2,critCoef=critRate*critMul,adjCoef=normalCoef+critCoef;
-  return{dmgIndex:Math.round(wpn.atk*totalPowMul*adjCoef),atk:wpn.atk,totalPowMul:totalPowMul,powMul:powMul,latentMul:latentMul,fixaMul:fixaMul,ringMul:ringMul,exCond:exCond,adjCoef:adjCoef,normalCoef:normalCoef,critCoef:critCoef,critRate:critRate,critMul:critMul,flFin:flFin,wt:wt};
+  return{dmgIndex:Math.round(wpn.atk*totalPowMul*adjCoef),atk:wpn.atk,totalPowMul:totalPowMul,powMul:powMul,latentMul:latentMul,fixaMul:fixaMul,ringMul:ringMul,exCond:exCond,adjCoef:adjCoef,normalCoef:normalCoef,critCoef:critCoef,critRate:critRate,critMul:critMul,flFin:flFin,wt:wt,condLatent:cl,latentCondPowMul:latentCondPowMul,latentCondCritDmgMul:latentCondCritDmgMul};
 }
 function buildDmgIndexHTML(tot){
   var d=calcDmgIndex(tot);
@@ -901,6 +906,15 @@ function buildDmgIndexHTML(tot){
     +(togExCond?'<span style="font-size:11px;font-weight:600;color:#e05080">×'+d.exCond.toFixed(4)+'</span>':'<span></span>')
     +'</div>':'')
     +row('武器潜在','×'+d.latentMul.toFixed(4),'#fde047')
+    +(d.condLatent?'<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0 4px 12px;border-bottom:1px solid #1e2535">'
+    +'<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:10px;color:'+(togLatentCond?'#fde047':'#475569')+'">'
+    +'<input type="checkbox" onchange="setTogLatentCond(this)" '+(togLatentCond?'checked':'')+' style="width:12px;height:12px;accent-color:#fde047;cursor:pointer">'+d.condLatent.desc+'を有効</label>'
+    +(togLatentCond?'<span style="font-size:11px;font-weight:600;color:#fde047">'
+      +(d.condLatent.pow?'威力×'+d.latentCondPowMul.toFixed(4)+' ':'')
+      +(d.condLatent.critRate?'クリ率+'+d.condLatent.critRate+'% ':'')
+      +(d.condLatent.critDmg?'クリ威力×'+d.latentCondCritDmgMul.toFixed(4):'')
+      +'</span>':'<span></span>')
+    +'</div>':'')
     +row('プリセット能力（確定分）','×'+d.fixaMul.toFixed(4),'#f59e0b')
     +'<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1e2535">'
     +'<span style="font-size:11px;color:#64748b">リングタイプ1（常時）</span>'
