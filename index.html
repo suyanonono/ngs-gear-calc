@@ -130,6 +130,11 @@ html,body{overflow-x:hidden;max-width:100%;background:#0f1117;color:#e2e8f0;font
 </head>
 <body>
 <button id="back_top" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="display:none;position:fixed;bottom:20px;right:20px;z-index:9998;padding:8px 12px;border-radius:10px;border:1px solid #334155;background:#1e2535;color:#94a3b8;font-size:12px;cursor:pointer;box-shadow:0 2px 12px #00000066">▲ トップへ</button>
+<div id="float_index" onclick="var el=document.getElementById('dmg_index_card');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})" style="display:none;position:fixed;bottom:20px;left:20px;z-index:9998;padding:8px 14px;border-radius:10px;border:1px solid #7c3aed66;background:#1e2535ee;cursor:pointer;box-shadow:0 2px 12px #00000066;backdrop-filter:blur(4px)">
+  <span style="font-size:10px;color:#a78bfa99;display:block;line-height:1.2">期待値指数</span>
+  <span id="float_index_val" style="font-size:18px;font-weight:700;color:#a78bfa;line-height:1.2">—</span>
+  <span id="float_index_diff" style="font-size:11px;font-weight:600;margin-left:4px"></span>
+</div>
 <div id="dd_modal_overlay" class="dd-modal-overlay" onclick="onModalOverlayClick(event)">
   <div class="dd-modal">
     <div class="dd-modal-header">
@@ -886,7 +891,7 @@ function buildDmgIndexHTML(tot){
       +'<span style="font-size:11px;color:#64748b">'+label+'</span>'
       +'<span style="font-size:12px;font-weight:600;color:'+(color||'#e2e8f0')+'">'+(sub?'<span class="sp-sub-note" style="font-size:10px;color:#475569;margin-right:6px">'+sub+'</span>':'')+val+'</span></div>';
   }
-  return '<div class="result-card" style="margin-top:8px;border-color:#7c3aed33">'
+  return '<div class="result-card" id="dmg_index_card" style="margin-top:8px;border-color:#7c3aed33">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">'
     +'<div style="font-size:13px;font-weight:500;color:#f1f5f9">ダメージ期待値指数</div>'
     +'<button id="slot_compare_btn" onclick="togSlotCompare()" style="padding:4px 10px;border-radius:6px;border:1px solid #334155;background:#1e2535;color:#94a3b8;font-size:11px;cursor:pointer">'+(showSlotCompare?'比較を閉じる':'他スロットと比較')+'</button>'
@@ -1111,7 +1116,26 @@ function calc(){
     +'<div class="sp-box dr"><div><div class="sp-label">ダメージ耐性（最終値）</div><div class="sp-sub">各防具・能力の乗算</div></div>'
     +'<div style="text-align:right"><div class="sp-val">'+(tot.dr*100).toFixed(2)+'<span class="sp-unit">%</span></div><div class="sp-sub">受けるダメージ割合：'+(drTaken*100).toFixed(2)+'%</div></div></div>'
     +'</div></div>'+buildRefHTML(tot.s,tot.r,tot.t)+buildDmgIndexHTML(tot);
+  updateFloatIndex(tot);
   if(showSlotCompare)renderSlotCompare();
+}
+// 画面固定の期待値バッジ更新(前回値との差分も表示)
+var _prevFloatIdx=null;
+function updateFloatIndex(tot){
+  var box=document.getElementById('float_index'),val=document.getElementById('float_index_val'),diff=document.getElementById('float_index_diff');
+  if(!box||!val)return;
+  var d=calcDmgIndex(tot);
+  if(!d){box.style.display='none';_prevFloatIdx=null;return;}
+  box.style.display='block';
+  val.textContent=d.dmgIndex.toLocaleString();
+  if(diff){
+    if(_prevFloatIdx!==null&&_prevFloatIdx!==d.dmgIndex){
+      var delta=d.dmgIndex-_prevFloatIdx;
+      diff.textContent=(delta>0?'▲':'▼')+Math.abs(delta).toLocaleString();
+      diff.style.color=delta>0?'#00ff88':'#f87171';
+    }else if(_prevFloatIdx===null){diff.textContent='';}
+  }
+  _prevFloatIdx=d.dmgIndex;
 }
 
 // ==================== 保存/復元 ====================
