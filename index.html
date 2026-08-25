@@ -130,10 +130,32 @@ html,body{overflow-x:hidden;max-width:100%;background:#0f1117;color:#e2e8f0;font
 </head>
 <body>
 <button id="back_top" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="display:none;position:fixed;bottom:20px;right:20px;z-index:9998;padding:8px 12px;border-radius:10px;border:1px solid #334155;background:#1e2535;color:#94a3b8;font-size:12px;cursor:pointer;box-shadow:0 2px 12px #00000066">▲ トップへ</button>
-<div id="float_index" onclick="var el=document.getElementById('dmg_index_card');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})" style="display:none;position:fixed;bottom:20px;left:20px;z-index:9998;padding:8px 14px;border-radius:10px;border:1px solid #7c3aed66;background:#1e2535ee;cursor:pointer;box-shadow:0 2px 12px #00000066;backdrop-filter:blur(4px)">
-  <span style="font-size:10px;color:#a78bfa99;display:block;line-height:1.2">期待値指数</span>
-  <span id="float_index_val" style="font-size:18px;font-weight:700;color:#a78bfa;line-height:1.2">—</span>
-  <span id="float_index_diff" style="font-size:11px;font-weight:600;margin-left:4px"></span>
+<div id="float_index" style="display:none;position:fixed;bottom:20px;left:20px;z-index:9998;border-radius:10px;border:1px solid #7c3aed66;background:#1e2535f2;box-shadow:0 2px 12px #00000066;backdrop-filter:blur(4px);max-width:min(280px,calc(100vw - 40px))">
+  <div onclick="toggleFloatPanel()" style="padding:8px 14px;cursor:pointer;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap">
+    <div style="flex:1;min-width:0">
+      <span style="font-size:10px;color:#a78bfa99;display:block;line-height:1.2">期待値指数</span>
+      <span id="float_index_val" style="font-size:18px;font-weight:700;color:#a78bfa;line-height:1.2">—</span>
+      <span id="float_index_diff" style="font-size:11px;font-weight:600;margin-left:4px"></span>
+      <span id="float_index_base" style="font-size:10px;color:#64748b;display:block;line-height:1.3"></span>
+      <span id="float_index_dps" style="font-size:11px;color:#00eeff;display:block;line-height:1.3;font-weight:600"></span>
+    </div>
+    <span id="float_index_caret" style="font-size:10px;color:#475569;flex-shrink:0">▲</span>
+  </div>
+  <div id="float_index_panel" style="display:none;border-top:1px solid #7c3aed33;padding:8px 12px 10px">
+    <div style="display:flex;gap:5px;margin-bottom:7px">
+      <button onclick="setIndexBaseline()" style="flex:1;padding:5px 6px;border-radius:6px;border:1px solid #7c3aed55;background:#7c3aed22;color:#a78bfa;font-size:10px;cursor:pointer;font-family:inherit">この構成を基準にする</button>
+      <button onclick="clearIndexBaseline()" style="padding:5px 8px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#64748b;font-size:10px;cursor:pointer;font-family:inherit">解除</button>
+    </div>
+    <div style="font-size:10px;color:#64748b;margin-bottom:4px">現構成の実測DPS（推定DPS換算用）</div>
+    <div style="display:flex;gap:5px">
+      <input id="float_dps_input" type="number" inputmode="numeric" placeholder="例: 70000" style="flex:1;min-width:0;padding:5px 7px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:12px;font-family:inherit">
+      <button onclick="setDpsAnchor()" style="padding:5px 9px;border-radius:6px;border:1px solid #00eeff55;background:#00eeff18;color:#00eeff;font-size:10px;cursor:pointer;font-family:inherit;flex-shrink:0">設定</button>
+    </div>
+    <div style="font-size:9px;color:#475569;margin-top:6px;line-height:1.4">実測値を入力すると、以降は指数に比例した推定DPSを表示します。武器やPAの使い方を変えた場合は再設定してください。</div>
+    <div style="text-align:right;margin-top:7px">
+      <button onclick="var el=document.getElementById('dmg_index_card');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})" style="padding:4px 8px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#94a3b8;font-size:10px;cursor:pointer;font-family:inherit">内訳を見る ↓</button>
+    </div>
+  </div>
 </div>
 <div id="dd_modal_overlay" class="dd-modal-overlay" onclick="onModalOverlayClick(event)">
   <div class="dd-modal">
@@ -1119,12 +1141,43 @@ function calc(){
   updateFloatIndex(tot);
   if(showSlotCompare)renderSlotCompare();
 }
-// 画面固定の期待値バッジ更新(前回値との差分も表示)
-var _prevFloatIdx=null;
+// 画面固定の期待値バッジ更新(前回値との差分・基準比・推定DPS)
+var _prevFloatIdx=null,_idxBaseline=null,_dpsAnchor=null;
+function toggleFloatPanel(){
+  var p=document.getElementById('float_index_panel'),c=document.getElementById('float_index_caret');
+  if(!p)return;
+  var open=p.style.display!=='block';
+  p.style.display=open?'block':'none';
+  if(c)c.textContent=open?'▼':'▲';
+}
+function setIndexBaseline(){
+  var d=calcDmgIndex(_lastTot);
+  if(!d){showMsg('武器を選択してください');return;}
+  _idxBaseline=d.dmgIndex;
+  updateFloatIndex(_lastTot);
+  showMsg('この構成を基準にしました');
+}
+function clearIndexBaseline(){
+  _idxBaseline=null;_dpsAnchor=null;
+  var inp=document.getElementById('float_dps_input');if(inp)inp.value='';
+  updateFloatIndex(_lastTot);
+  showMsg('基準・実測DPSを解除しました');
+}
+function setDpsAnchor(){
+  var inp=document.getElementById('float_dps_input');
+  var v=inp?parseFloat(inp.value):NaN;
+  var d=calcDmgIndex(_lastTot);
+  if(!d){showMsg('武器を選択してください');return;}
+  if(!isFinite(v)||v<=0){showMsg('正の数値を入力してください');return;}
+  _dpsAnchor={dps:v,idx:d.dmgIndex};
+  updateFloatIndex(_lastTot);
+  showMsg('実測DPSを設定しました');
+}
 function updateFloatIndex(tot){
   var box=document.getElementById('float_index'),val=document.getElementById('float_index_val'),diff=document.getElementById('float_index_diff');
+  var baseEl=document.getElementById('float_index_base'),dpsEl=document.getElementById('float_index_dps');
   if(!box||!val)return;
-  var d=calcDmgIndex(tot);
+  var d=tot?calcDmgIndex(tot):null;
   if(!d){box.style.display='none';_prevFloatIdx=null;return;}
   box.style.display='block';
   val.textContent=d.dmgIndex.toLocaleString();
@@ -1134,6 +1187,19 @@ function updateFloatIndex(tot){
       diff.textContent=(delta>0?'▲':'▼')+Math.abs(delta).toLocaleString();
       diff.style.color=delta>0?'#00ff88':'#f87171';
     }else if(_prevFloatIdx===null){diff.textContent='';}
+  }
+  if(baseEl){
+    if(_idxBaseline){
+      var r=(d.dmgIndex/_idxBaseline-1)*100;
+      baseEl.textContent='基準比 '+(r>=0?'+':'')+r.toFixed(2)+'%';
+      baseEl.style.color=Math.abs(r)<0.005?'#64748b':(r>0?'#00ff88':'#f87171');
+    }else baseEl.textContent='';
+  }
+  if(dpsEl){
+    if(_dpsAnchor&&_dpsAnchor.idx>0){
+      var est=_dpsAnchor.dps*(d.dmgIndex/_dpsAnchor.idx);
+      dpsEl.textContent='推定DPS '+Math.round(est).toLocaleString();
+    }else dpsEl.textContent='';
   }
   _prevFloatIdx=d.dmgIndex;
 }
