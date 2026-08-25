@@ -168,6 +168,7 @@ html,body{overflow-x:hidden;max-width:100%;background:#0f1117;color:#e2e8f0;font
           <div id="copy_menu_items"></div>
         </div>
       </div>
+      <button class="hdr-btn" onclick="autoOptimize()" style="color:#a78bfa;border-color:#7c3aed44">OP自動最適化</button>
       <button class="hdr-btn" onclick="resetState()" style="color:#f87171;border-color:#f8717144">初期化</button>
     </div>
     <span id="save_msg" style="font-size:11px;color:#64748b;display:block;height:16px;line-height:16px"></span>
@@ -1170,6 +1171,122 @@ function resetState(){
   calc();
 }
 window.addEventListener('scroll',function(){var btn=document.getElementById('back_top');if(btn)btn.style.display=window.scrollY>200?'block':'none';});
+
+// ==================== OP自動最適化 ====================
+// 排他ルール(同系統1装備1個・ユーゼ/ユディ系1装備1個)を守りながら
+// ダメージ期待値指数を最大化するOP構成を貪欲法+交換改善で探索する。
+// 対象: 武器+ユニット①②③のOP枠のみ(EX/プリセット/リング/基礎値は現状のまま文脈として使用)
+function _optSeries(n){if(n.startsWith('ユーゼ・'))return 'ユーゼ';if(n.startsWith('ユディ・'))return 'ユディ';return null;}
+function autoOptimize(){
+  var wpnSel=document.querySelector('#panel_weapon .sel-wrap select');
+  var wpn=WEAPONS[wpnSel?parseInt(wpnSel.value)||0:0]||WEAPONS[0];
+  if(!wpn.atk){alert('先に武器を選択してください（期待値指数の計算に必要です）');return;}
+  if(!confirm('現在のOP能力（武器+ユニット①②③の各8枠）を、期待値最大の構成で上書きします。よろしいですか？\n※EX能力・プリセット・リングは変更しません'))return;
+
+  var wtSel=document.getElementById('weapon_type_sel');
+  var wt=WEAPON_TYPES[wtSel?parseInt(wtSel.value)||0:0]||WEAPON_TYPES[0];
+  var cands=PRESETS.filter(function(p){return !p.cat&&!p.subcat&&p.n!=='（なし）';});
+
+  // 武器はEX使用分だけOP枠が減る(合計8ルール)
+  var exCount=0;for(var j=0;j<3;j++){var en=getN('weapon_ex'+j);if(en&&en!=='（なし）')exCount++;}
+  var gears=[
+    {id:'weapon',slots:Math.max(0,8-exCount)},
+    {id:'armor1',slots:8},{id:'armor2',slots:8},{id:'armor3',slots:8}
+  ];
+
+  // OP以外の固定乗数(防具基礎値・EX能力)を集計
+  var fix={s:1,r:1,t:1,fl:1};
+  GEAR.filter(function(g){return !g.isRing;}).forEach(function(g){
+    if(!g.isWeapon)['s','r','t'].forEach(function(k){fix[k]*=(1+gv(g.id+'_'+k)/100);});
+    if(g.isWeapon)for(var j2=0;j2<3;j2++){['s','r','t'].forEach(function(k){fix[k]*=(1+gv('weapon_ex'+j2+'_'+k)/100);});fix.fl*=(1+gv('weapon_ex'+j2+'_fl')/100);}
+  });
+
+  // OP選択に依存しない係数(クリ率・クリ倍率・その他の定数倍率)は現在の設定から取得
+  var d0=calcDmgIndex(_lastTot)||{critRate:0.15,critMul:1.2};
+  var critRate=d0.critRate,critMul=d0.critMul;
+
+  // sel: gears[i]ごとの選択済み候補配列
+  function evalSel(sel){
+    var m={s:fix.s,r:fix.r,t:fix.t},flMul=fix.fl;
+    sel.forEach(function(list){list.forEach(function(p){
+      m.s*=(1+(p.s||0)/100);m.r*=(1+(p.r||0)/100);m.t*=(1+(p.t||0)/100);
+      flMul*=(1+(p.fl||0)/100);
+    });});
+    var powMul=wt.atk==='s'?m.s:wt.atk==='r'?m.r:wt.atk==='t'?m.t:wt.atk==='sr'?Math.max(m.s,m.r):wt.atk==='st'?Math.max(m.s,m.t):(m.s+m.r+m.t)/3;
+    var flFin=Math.min((wpn.fl||0)*flMul,100)/100;
+    var adj=(1-critRate)*(flFin+1)/2+critRate*critMul;
+    return powMul*adj;
+  }
+  function canPlace(list,p){
+    var key=normalizeOpName(p.n),series=_optSeries(p.n);
+    for(var i=0;i<list.length;i++){
+      if(normalizeOpName(list[i].n)===key)return false;
+      if(series&&_optSeries(list[i].n)===series)return false;
+    }
+    return true;
+  }
+
+  // 貪欲法: 空き枠がある限り、最も指数を上げる(候補,装備)ペアを追加
+  var sel=gears.map(function(){return[];});
+  var cur=evalSel(sel);
+  for(;;){
+    var best=null;
+    for(var gi=0;gi<gears.length;gi++){
+      if(sel[gi].length>=gears[gi].slots)continue;
+      for(var ci=0;ci<cands.length;ci++){
+        var p=cands[ci];
+        if(!canPlace(sel[gi],p))continue;
+        sel[gi].push(p);
+        var v=evalSel(sel);
+        sel[gi].pop();
+        // 同値なら hp+pp が高い方を優先
+        if(!best||v>best.v+1e-12||(Math.abs(v-best.v)<=1e-12&&((p.hp||0)+(p.pp||0))>((best.p.hp||0)+(best.p.pp||0)))){
+          best={v:v,gi:gi,p:p};
+        }
+      }
+    }
+    if(!best||best.v<=cur+1e-12){
+      // 上げ幅が無くても空き枠が残る場合はhp+pp最大で埋める(実害なし・恩恵あり)
+      if(best&&best.v>cur-1e-9){sel[best.gi].push(best.p);cur=best.v;continue;}
+      break;
+    }
+    sel[best.gi].push(best.p);cur=best.v;
+  }
+
+  // 交換改善: 各選択を未使用候補と交換して改善するなら採用(安定するまで)
+  var improved=true,guard=0;
+  while(improved&&guard++<20){
+    improved=false;
+    for(var gi2=0;gi2<gears.length;gi2++){
+      for(var si=0;si<sel[gi2].length;si++){
+        for(var ci2=0;ci2<cands.length;ci2++){
+          var q=cands[ci2];
+          var old=sel[gi2][si];
+          if(q.n===old.n)continue;
+          sel[gi2].splice(si,1);
+          if(!canPlace(sel[gi2],q)){sel[gi2].splice(si,0,old);continue;}
+          sel[gi2].splice(si,0,q);
+          var v2=evalSel(sel);
+          if(v2>cur+1e-12){cur=v2;improved=true;}
+          else{sel[gi2].splice(si,1);sel[gi2].splice(si,0,old);}
+        }
+      }
+    }
+  }
+
+  // 結果をUIへ反映
+  gears.forEach(function(g,gi3){
+    for(var i2=0;i2<8;i2++){
+      var pid=g.id+'_af'+i2,btn=document.getElementById(pid+'_btn');
+      var p2=i2<sel[gi3].length?sel[gi3][i2]:null;
+      if(btn)btn.textContent=p2?p2.n:'（なし）';
+      ALL_STATS.forEach(function(st){var el=document.getElementById(pid+'_'+st.k);if(el)el.value=p2?(p2[st.k]||0):0;});
+    }
+    updDupe(g.id);
+  });
+  chkLim();calc();
+  showMsg('OP構成を最適化しました');
+}
 
 // ==================== データ読込＆初期化 ====================
 var DATA_BASE='data/';
