@@ -1327,7 +1327,12 @@ function autoOptimize(forAbandac){
 
   var wtSel=document.getElementById('weapon_type_sel');
   var wt=WEAPON_TYPES[wtSel?parseInt(wtSel.value)||0:0]||WEAPON_TYPES[0];
-  var cands=PRESETS.filter(function(p){return !p.cat&&!p.subcat&&p.n!=='（なし）';});
+  var referenceKeys=wt.atk==='sr'?['s','r']:wt.atk==='st'?['s','t']:['s','r','t'].indexOf(wt.atk)!==-1?[wt.atk]:['s','r','t'];
+  var cands=PRESETS.filter(function(p){
+    if(p.cat||p.subcat||p.n==='（なし）')return false;
+    // アバンダクでも、参照属性が一つも上がらないユーゼ・ユディは使わない。
+    return !forAbandac||!_optSeries(p.n)||referenceKeys.some(function(k){return (p[k]||0)>0;});
+  });
 
   // 未入力でもEX3枠を予約する。
   var gears=[
@@ -1456,6 +1461,28 @@ function autoOptimize(forAbandac){
     if(better(fromCurrent.score,tieStats(fromCurrent.sel),bestResult.score,tieStats(bestResult.sel)))bestResult=fromCurrent;
   }
   sel=bestResult.sel;
+  if(forAbandac){
+    // 同じ能力集合を維持し、2属性版を武器へ、全属性版を防具へ移す。
+    // 部位ごとの排他と評価値を確認してから交換する。
+    for(var wi=0;wi<sel[0].length;wi++){
+      var weaponOp=sel[0][wi];
+      if(!fullAttributePriority(weaponOp))continue;
+      var swapped=false;
+      for(var ai=1;ai<sel.length&&!swapped;ai++){
+        for(var oi=0;oi<sel[ai].length;oi++){
+          var armorOp=sel[ai][oi];
+          if(_optSeries(armorOp.n)!==_optSeries(weaponOp.n))continue;
+          if(['s','r','t'].filter(function(k){return armorOp[k]>0;}).length!==2)continue;
+          var weaponRest=sel[0].filter(function(p,i){return i!==wi;});
+          var armorRest=sel[ai].filter(function(p,i){return i!==oi;});
+          if(!canPlace(weaponRest,armorOp)||!canPlace(armorRest,weaponOp))continue;
+          sel[0][wi]=armorOp;sel[ai][oi]=weaponOp;
+          if(Math.abs(evalSel(sel)-bestResult.score)<=1e-12){swapped=true;break;}
+          sel[0][wi]=weaponOp;sel[ai][oi]=armorOp;
+        }
+      }
+    }
+  }
 
   // 結果をUIへ反映
   gears.forEach(function(g,gi3){

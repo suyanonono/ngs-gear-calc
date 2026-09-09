@@ -59,3 +59,20 @@ assert.ok(tied.sel.flat().filter(p=>/^ユーゼ・|^ユディ・/.test(p.n)).eve
 const allAlm=result.sel.map(list=>list.map(p=>/^ユーゼ・/.test(p.n)?presets.find(x=>x.n==='ユーゼ・アルムバルフト'):/^ユディ・/.test(p.n)?presets.find(x=>x.n==='ユディ・アルムバルフト'):p));
 assert.ok(result.evalSel(allAlm)<result.score);
 console.log('PASS: full-attribute tie preference regardless of candidate order; Abandac diversity beats repeated Alm in fixture.');
+
+for(const attr of ['s','r','t','sr','st','avg']){
+ const f=fixture(7);f.ctx.WEAPON_TYPES=[{atk:attr}];const x=check(f,true);
+ const keys=attr==='sr'?['s','r']:attr==='st'?['s','t']:attr==='avg'?['s','r','t']:[attr];
+ const series=p=>/^ユーゼ・/.test(p.n)?'ユーゼ':/^ユディ・/.test(p.n)?'ユディ':null;
+ const dual=p=>['s','r','t'].filter(k=>p[k]>0).length===2;
+ const full=p=>['s','r','t'].every(k=>p[k]>0);
+ for(const p of x.sel.flat().filter(series))assert.ok(keys.some(k=>p[k]>0));
+ for(const family of ['ユーゼ','ユディ']){
+  if(x.sel.slice(1).flat().some(p=>series(p)===family&&dual(p))){
+   assert.ok(!x.sel[0].some(p=>series(p)===family&&full(p)),'Move available dual to weapon');
+  }
+ }
+ assert.ok(Math.abs(x.evalSel(x.sel)-x.score)<1e-10);
+ console.log(attr+': '+x.sel[0].filter(series).map(p=>p.n).join(', '));
+}
+console.log('PASS: supported attributes, weapon-first dual allocation, unchanged objective and exclusions across all weapon reference modes');
