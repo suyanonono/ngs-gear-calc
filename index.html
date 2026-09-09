@@ -1363,6 +1363,16 @@ function autoOptimize(forAbandac){
     var abandacMul=forAbandac?1+(abandacBase+Math.round(typeCount*abandacPerType*1000)/1000)/100:1;
     return powMul*adj*abandacMul;
   }
+  // 期待値を第一優先。同点なら全属性バルフト系、次にHP+PPを優先する。
+  function fullAttributePriority(p){
+    return _optSeries(p.n)&&p.n.endsWith('バルフト')&&p.s>0&&p.r>0&&p.t>0?1:0;
+  }
+  function tieStats(sel){
+    return sel.reduce(function(sum,list){list.forEach(function(p){sum.full+=fullAttributePriority(p);sum.hpPP+=(p.hp||0)+(p.pp||0);});return sum;},{full:0,hpPP:0});
+  }
+  function better(v,tie,oldV,oldTie){
+    return v>oldV+1e-12||(Math.abs(v-oldV)<=1e-12&&(tie.full>oldTie.full||(tie.full===oldTie.full&&tie.hpPP>oldTie.hpPP)));
+  }
   function canPlace(list,p){
     var key=normalizeOpName(p.n),series=_optSeries(p.n);
     for(var i=0;i<list.length;i++){
@@ -1400,8 +1410,8 @@ function autoOptimize(forAbandac){
         sel[gi].push(p);
         var v=evalSel(sel);
         sel[gi].pop();
-        // 同値なら hp+pp が高い方を優先
-        if(!best||v>best.v+1e-12||(Math.abs(v-best.v)<=1e-12&&((p.hp||0)+(p.pp||0))>((best.p.hp||0)+(best.p.pp||0)))){
+        // 同じ期待値なら全属性バルフト系、次にHP+PPを優先
+        if(!best||better(v,{full:fullAttributePriority(p),hpPP:(p.hp||0)+(p.pp||0)},best.v,{full:fullAttributePriority(best.p),hpPP:(best.p.hp||0)+(best.p.pp||0)})){
           best={v:v,gi:gi,p:p};
         }
       }
@@ -1415,7 +1425,7 @@ function autoOptimize(forAbandac){
   }
 
   function improve(seed){
-    var sel=seed.map(function(list){return list.slice();}),cur=evalSel(sel);
+    var sel=seed.map(function(list){return list.slice();}),cur=evalSel(sel),curTie=tieStats(sel);
   // 交換改善: 各選択を未使用候補と交換して改善するなら採用(安定するまで)
   var improved=true,guard=0;
   while(improved&&guard++<20){
@@ -1430,7 +1440,8 @@ function autoOptimize(forAbandac){
           if(!canPlace(sel[gi2],q)){sel[gi2].splice(si,0,old);continue;}
           sel[gi2].splice(si,0,q);
           var v2=evalSel(sel);
-          if(v2>cur+1e-12){cur=v2;improved=true;}
+          var nextTie=tieStats(sel);
+          if(better(v2,nextTie,cur,curTie)){cur=v2;curTie=nextTie;improved=true;}
           else{sel[gi2].splice(si,1);sel[gi2].splice(si,0,old);}
         }
       }
@@ -1442,7 +1453,7 @@ function autoOptimize(forAbandac){
   var bestResult=improve(sel);
   if(current.every(function(list){return list!==null;})){
     var fromCurrent=improve(current);
-    if(fromCurrent.score>bestResult.score+1e-12)bestResult=fromCurrent;
+    if(better(fromCurrent.score,tieStats(fromCurrent.sel),bestResult.score,tieStats(bestResult.sel)))bestResult=fromCurrent;
   }
   sel=bestResult.sel;
 

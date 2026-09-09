@@ -50,3 +50,12 @@ let none=fixture(0);none.ctx.accept=false;none.ctx.autoOptimize(false);assert.ma
 console.log('PASS: syntax, 29 slots, exclusion rules, EX preservation, missing-EX notices, Abandac Lv1/Lv5 and cap20 formula, variant diversity, non-degradation, wrong-button guards and cancellation.');
 console.log('Unique normal OP types: normal='+new Set(normal.ctx.inspect.sel.flat().map(p=>p.n)).size+', Abandac='+distinct.size);
 
+
+const fullTie=fixture(1);
+fullTie.ctx.calcDmgIndex=()=>({critRate:1,critMul:1.2});
+fullTie.ctx.PRESETS=presets.slice().reverse();
+const tied=check(fullTie,false);
+assert.ok(tied.sel.flat().filter(p=>/^ユーゼ・|^ユディ・/.test(p.n)).every(p=>p.n.endsWith('バルフト')));
+const allAlm=result.sel.map(list=>list.map(p=>/^ユーゼ・/.test(p.n)?presets.find(x=>x.n==='ユーゼ・アルムバルフト'):/^ユディ・/.test(p.n)?presets.find(x=>x.n==='ユディ・アルムバルフト'):p));
+assert.ok(result.evalSel(allAlm)<result.score);
+console.log('PASS: full-attribute tie preference regardless of candidate order; Abandac diversity beats repeated Alm in fixture.');
