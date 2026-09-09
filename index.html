@@ -220,6 +220,37 @@ var storage={
 
 // ==================== 外部データ(JSONから読込) ====================
 var WEAPONS=[];
+// 表示順だけを定義する。各グループは最新武器→アップグレード元の順。
+// WEAPONSの配列番号は保存データの識別に使うため変更しない。
+// 新シリーズは先頭へ、アップグレードは元シリーズをまとめて先頭へ移す。
+var WEAPON_DISPLAY_GROUPS=[
+  ['【★15】リイズ','【★15】カイズ'],
+  ['【LG5】レアレンス'],
+  ['【★15】ショウゲンセイ','【★15】コウゲンセイ'],
+  ['【LG4】レクシオ'],
+  ['【★14】アルバラディオ'],
+  ['【★14】アルセ']
+];
+function buildWeaponOptions(){
+  var used=new Set();
+  function option(i,isPrevious){
+    used.add(i);
+    var label=(isPrevious?'　└ ':'')+WEAPONS[i].n+(isPrevious?'（アップグレード元）':'');
+    return '<option value="'+i+'">'+label.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')+'</option>';
+  }
+  var html=WEAPONS.length?option(0,false):'';
+  WEAPON_DISPLAY_GROUPS.forEach(function(group){
+    var found=0;
+    group.forEach(function(name){
+      var i=WEAPONS.findIndex(function(w){return w.n===name;});
+      if(i>0&&!used.has(i)){html+=option(i,found>0);found++;}
+    });
+  });
+  // 未登録の武器も欠落させず末尾に表示する。
+  WEAPONS.forEach(function(w,i){if(!used.has(i))html+=option(i,false);});
+  return html;
+}
+
 var ARMORS=[];
 var RING_TYPE1=[];
 var RING_TYPE2=[];
@@ -729,7 +760,7 @@ function buildPanel(g){
     +'<select id="fixa_lv" onchange="calc()" style="width:80px;background:#0f1117;border:1px solid #f59e0b44;border-radius:8px;color:#f59e0b;font-size:13px;padding:6px 8px;outline:none">'+fixaLvOpts+'</select>'
     +'</div></div>':'';
   var selHtml=g.isWeapon
-    ?'<div class="sel-wrap"><label>武器選択</label><select onchange="onWpn(this)">'+WEAPONS.map(function(w,i){return'<option value="'+i+'">'+w.n+'</option>';}).join('')+'</select></div>'+fixaSel
+    ?'<div class="sel-wrap"><label>武器選択</label><select onchange="onWpn(this)">'+buildWeaponOptions()+'</select></div>'+fixaSel
     :'<div class="sel-wrap armor-sel"><label>ユニット選択</label><select onchange="onAmr(this,\''+g.id+'\')">'+ARMORS.map(function(a,i){return'<option value="'+i+'">'+a.n+'</option>';}).join('')+'</select></div>';
   var copyBtns=g.isWeapon||g.isRing?'':GEAR.filter(function(og){return og.id!==g.id&&!og.isWeapon&&!og.isRing;}).map(function(og){
     return'<button onclick="copyAff(\''+g.id+'\',\''+og.id+'\')" style="padding:3px 8px;border-radius:6px;border:1px solid #1e2535;background:#0f1117;color:#64748b;font-size:11px;cursor:pointer">'+og.label+'</button>';
