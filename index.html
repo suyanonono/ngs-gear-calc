@@ -1206,7 +1206,7 @@ function updateFloatIndex(tot){
 
 // ==================== 保存/復元 ====================
 function collectState(){
-  var st={bi:{},af:{},exs:{},ws:'0',wts:'0',rt1:'0',rt2:'0',rt1lv:'0',rt2lv:'0',fixa:'0',fixalv:'0',tog_sl:togSlState,tog_gear:togGearState,tog_subsl:togSubSlState};
+  var st={bi:{},af:{},exs:{},ws:'0',wts:'0',rt1:'0',rt2:'0',rt1lv:'0',rt2lv:'0',fixa:'0',fixalv:'0',tog_sl:togSlState,tog_gear:togGearState,tog_subsl:togSubSlState,tog_ex_cond:togExCond,tog_ring_cond:togRingCond,tog_latent_cond:togLatentCond};
   document.querySelectorAll('input[type="number"]').forEach(function(el){if(el.id)st.bi[el.id]=el.value;});
   GEAR.filter(function(g){return !g.isRing;}).forEach(function(g){
     for(var i=0;i<8;i++){var pid=g.id+'_af'+i;var b=document.getElementById(pid+'_btn');if(b)st.af[pid]=b.textContent;}
@@ -1222,6 +1222,10 @@ function collectState(){
   return st;
 }
 function applyState(st){
+  // 旧保存データに条件トグルがない場合はOFFとして復元する。
+  togExCond=!!st.tog_ex_cond;
+  togRingCond=!!st.tog_ring_cond;
+  togLatentCond=!!st.tog_latent_cond;
   var ws=document.querySelector('#panel_weapon .sel-wrap select');if(ws){ws.value=st.ws||'0';onWpn(ws);}
   var wts=document.getElementById('weapon_type_sel');if(wts)wts.value=st.wts||'0';
   ['armor1','armor2','armor3'].forEach(function(id){var s=document.querySelector('#panel_'+id+' .sel-wrap select');if(s){s.value=st[id+'s']||'0';onAmr(s,id);}});
