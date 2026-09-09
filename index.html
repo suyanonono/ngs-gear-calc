@@ -196,8 +196,10 @@ html,body{overflow-x:hidden;max-width:100%;background:#0f1117;color:#e2e8f0;font
         </div>
       </div>
       <button class="hdr-btn" onclick="autoOptimize()" style="color:#a78bfa;border-color:#7c3aed44">OP自動最適化</button>
+      <button class="hdr-btn" onclick="autoOptimize(true)" style="color:#fbbf24;border-color:#f59e0b44">アバンダク用最適化</button>
       <button class="hdr-btn" onclick="resetState()" style="color:#f87171;border-color:#f8717144">初期化</button>
     </div>
+    <div id="optimize_notice" role="status" aria-live="polite" style="display:none;font-size:12px;color:#fbbf24;max-width:560px;line-height:1.6;margin-top:6px"></div>
     <span id="save_msg" style="font-size:11px;color:#64748b;display:block;height:16px;line-height:16px"></span>
   </div>
 </div>
@@ -1302,20 +1304,34 @@ window.addEventListener('scroll',function(){var btn=document.getElementById('bac
 // ダメージ期待値指数を最大化するOP構成を貪欲法+交換改善で探索する。
 // 対象: 武器+ユニット①②③のOP枠のみ(EX/プリセット/リング/基礎値は現状のまま文脈として使用)
 function _optSeries(n){if(n.startsWith('ユーゼ・'))return 'ユーゼ';if(n.startsWith('ユディ・'))return 'ユディ';return null;}
-function autoOptimize(){
+function autoOptimize(forAbandac){
+  forAbandac=forAbandac===true;
   var wpnSel=document.querySelector('#panel_weapon .sel-wrap select');
   var wpn=WEAPONS[wpnSel?parseInt(wpnSel.value)||0:0]||WEAPONS[0];
   if(!wpn.atk){alert('先に武器を選択してください（期待値指数の計算に必要です）');return;}
-  if(!confirm('現在のOP能力（武器+ユニット①②③の各8枠）を、期待値最大の構成で上書きします。よろしいですか？\n※EX能力・プリセット・リングは変更しません'))return;
+  var fixa=FIXAS[gv('fixa_sel')]||FIXAS[0],fixaLv=gv('fixa_lv');
+  var isAbandac=fixa.n==='フィクサ・アバンダク';
+  if(forAbandac&&!isAbandac){alert('アバンダクとレベルを選択してください。');return;}
+  if(!forAbandac&&isAbandac){alert('アバンダク選択中です。「アバンダク用最適化」を使用してください。');return;}
+  var exNames=[];
+  for(var ei=0;ei<3;ei++){var exName=getN('weapon_ex'+ei);if(exName&&exName!=='（なし）')exNames.push(exName);}
+  var missingEx=3-exNames.length;
+  var assumption=missingEx
+    ?'EX能力が'+missingEx+'枠未入力です。'+(forAbandac?'未入力分はそれぞれ異なるEXを装着する想定で、異能力数に含めます。':'')+'未入力EXのステータス・条件効果は未計上です。'
+    :'';
+  var presetLabel=gv('fixa_sel')?fixa.n+' Lv.'+(fixaLv+1):'プリセット能力が未選択です。能力なし';
+  if(!confirm(presetLabel+'として通常OP29枠（武器5枠＋防具24枠）を最適化します。\nEX3枠は予約し、入力済みのEX・プリセット・リングは変更しません。\n'+assumption+'\n現在の通常OP構成を上書きします。よろしいですか？'))return;
+  var abandacRow=isAbandac?fixa.rows.find(function(row){return row.label==='_abandak';}):null;
+  var abandacPerType=abandacRow?(abandacRow.vals[fixaLv]||0):0;
+  var abandacBase=isAbandac?fixa.rows.reduce(function(sum,row){return sum+(row.label==='威力+'?(row.vals[fixaLv]||0):0);},0):0;
 
   var wtSel=document.getElementById('weapon_type_sel');
   var wt=WEAPON_TYPES[wtSel?parseInt(wtSel.value)||0:0]||WEAPON_TYPES[0];
   var cands=PRESETS.filter(function(p){return !p.cat&&!p.subcat&&p.n!=='（なし）';});
 
-  // 武器はEX使用分だけOP枠が減る(合計8ルール)
-  var exCount=0;for(var j=0;j<3;j++){var en=getN('weapon_ex'+j);if(en&&en!=='（なし）')exCount++;}
+  // 未入力でもEX3枠を予約する。
   var gears=[
-    {id:'weapon',slots:Math.max(0,8-exCount)},
+    {id:'weapon',slots:5},
     {id:'armor1',slots:8},{id:'armor2',slots:8},{id:'armor3',slots:8}
   ];
 
@@ -1340,17 +1356,37 @@ function autoOptimize(){
     var powMul=wt.atk==='s'?m.s:wt.atk==='r'?m.r:wt.atk==='t'?m.t:wt.atk==='sr'?Math.max(m.s,m.r):wt.atk==='st'?Math.max(m.s,m.t):(m.s+m.r+m.t)/3;
     var flFin=Math.min((wpn.fl||0)*flMul,100)/100;
     var adj=(1-critRate)*(flFin+1)/2+critRate*critMul;
-    return powMul*adj;
+    // 排他判定は正規化名、アバンダクの種類数は実際の能力名で数える。
+    var names=new Set(exNames);
+    sel.forEach(function(list){list.forEach(function(p){names.add(p.n);});});
+    var typeCount=Math.min(20,names.size+missingEx);
+    var abandacMul=forAbandac?1+(abandacBase+Math.round(typeCount*abandacPerType*1000)/1000)/100:1;
+    return powMul*adj*abandacMul;
   }
   function canPlace(list,p){
     var key=normalizeOpName(p.n),series=_optSeries(p.n);
     for(var i=0;i<list.length;i++){
       if(normalizeOpName(list[i].n)===key)return false;
       if(series&&_optSeries(list[i].n)===series)return false;
+      if(SUFFIX_GROUPS.some(function(sfx){return key.endsWith(sfx)&&normalizeOpName(list[i].n).endsWith(sfx);}))return false;
     }
     return true;
   }
 
+  // 有効な現在構成からも探索し、同じ評価条件で良い方を採用する。
+  var current=gears.map(function(g){
+    var list=[];
+    for(var i=0;i<8;i++){
+      var name=getN(g.id+'_af'+i);
+      if(!name||name==='（なし）')continue;
+      var p=cands.find(function(p){return p.n===name;});
+      if(!p||!canPlace(list,p))return null;
+      // 手入力でデータ定義と異なる場合は比較用シードにはしない。
+      if(['s','r','t','fl'].some(function(k){return gv(g.id+'_af'+i+'_'+k)!==(p[k]||0);}))return null;
+      list.push(p);
+    }
+    return list.length===g.slots?list:null;
+  });
   // 貪欲法: 空き枠がある限り、最も指数を上げる(候補,装備)ペアを追加
   var sel=gears.map(function(){return[];});
   var cur=evalSel(sel);
@@ -1378,6 +1414,8 @@ function autoOptimize(){
     sel[best.gi].push(best.p);cur=best.v;
   }
 
+  function improve(seed){
+    var sel=seed.map(function(list){return list.slice();}),cur=evalSel(sel);
   // 交換改善: 各選択を未使用候補と交換して改善するなら採用(安定するまで)
   var improved=true,guard=0;
   while(improved&&guard++<20){
@@ -1399,6 +1437,15 @@ function autoOptimize(){
     }
   }
 
+    return {sel:sel,score:cur};
+  }
+  var bestResult=improve(sel);
+  if(current.every(function(list){return list!==null;})){
+    var fromCurrent=improve(current);
+    if(fromCurrent.score>bestResult.score+1e-12)bestResult=fromCurrent;
+  }
+  sel=bestResult.sel;
+
   // 結果をUIへ反映
   gears.forEach(function(g,gi3){
     for(var i2=0;i2<8;i2++){
@@ -1410,6 +1457,12 @@ function autoOptimize(){
     updDupe(g.id);
   });
   chkLim();calc();
+  var notice=document.getElementById('optimize_notice');
+  if(notice){
+    notice.style.display='block';
+    notice.textContent=(forAbandac?'アバンダク用':'通常')+'の通常OP29枠を最適化しました。'
+      +(missingEx?'実行時：'+assumption+'暫定構成です。EX設定後に再最適化してください。表示指数は入力済みの能力のみで計算しています。':'入力済みEX3枠は維持しました。');
+  }
   showMsg('OP構成を最適化しました');
 }
 
