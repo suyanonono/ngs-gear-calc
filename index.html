@@ -126,6 +126,14 @@ html,body{overflow-x:hidden;max-width:100%;background:#0f1117;color:#e2e8f0;font
 .dd-modal-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 8px;border-bottom:1px solid #334155}
 .dd-modal-title{font-size:13px;font-weight:500;color:#e2e8f0}
 .dd-modal-close{background:none;border:none;color:#64748b;font-size:18px;cursor:pointer;padding:0 4px;line-height:1}
+.owned-s-dialog{margin:auto;width:min(94vw,560px);max-height:90vh;overflow:auto;padding:20px;background:#1e2535;color:#e2e8f0;border:1px solid #475569;border-radius:12px}
+.owned-s-dialog::backdrop{background:#000a}
+.owned-s-dialog h2{font-size:16px;margin-bottom:12px}
+.owned-s-dialog p{font-size:12px;line-height:1.7;margin:10px 0}
+.owned-s-dialog label{display:block;padding:10px 4px;cursor:pointer}
+.owned-s-dialog input{accent-color:#fbbf24;width:16px;height:16px;vertical-align:middle}
+.owned-s-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.owned-s-dialog button:disabled{opacity:.5;cursor:wait}
 </style>
 </head>
 <body>
@@ -157,6 +165,16 @@ html,body{overflow-x:hidden;max-width:100%;background:#0f1117;color:#e2e8f0;font
     </div>
   </div>
 </div>
+<dialog id="owned_s_dialog" class="owned-s-dialog" aria-labelledby="owned_s_title" aria-describedby="owned_s_help">
+  <h2 id="owned_s_title">アバンダク最適化：所持Sカプセル</h2>
+  <p id="owned_s_help">最適化に使用してよいS系を選んでください。未選択のS系は使いません（現在装着中のものも対象外）。所持数ではなく種類の指定で、同じS系を複数部位に使う場合があります。選択内容はこのブラウザに保存します。</p>
+  <div class="owned-s-actions"><button class="hdr-btn" type="button" onclick="setOwnedSCaps(true)">すべて選択</button><button class="hdr-btn" type="button" onclick="setOwnedSCaps(false)">すべて解除</button></div>
+  <div id="owned_s_list"></div>
+  <p>期待値優先で選ぶため、選択したS系をすべて採用するとは限りません。S系なしでも実行できます。</p>
+  <p>現在の通常OP29枠（武器5＋防具24）を上書きします。入力済みEX・プリセット・リングは維持します。EX3枠は予約し、未入力分は異なるEXとして種類数のみ仮定します。</p>
+  <div class="owned-s-actions"><button id="owned_s_run" class="hdr-btn" type="button" onclick="runOwnedSOptimize()">この条件で最適化</button><button class="hdr-btn" type="button" onclick="document.getElementById('owned_s_dialog').close()">キャンセル</button></div>
+  <p id="owned_s_error" role="status" aria-live="polite"></p>
+</dialog>
 <div id="dd_modal_overlay" class="dd-modal-overlay" onclick="onModalOverlayClick(event)">
   <div class="dd-modal">
     <div class="dd-modal-header">
@@ -1304,7 +1322,40 @@ window.addEventListener('scroll',function(){var btn=document.getElementById('bac
 // ダメージ期待値指数を最大化するOP構成を貪欲法+交換改善で探索する。
 // 対象: 武器+ユニット①②③のOP枠のみ(EX/プリセット/リング/基礎値は現状のまま文脈として使用)
 function _optSeries(n){if(n.startsWith('ユーゼ・'))return 'ユーゼ';if(n.startsWith('ユディ・'))return 'ユディ';return null;}
-function autoOptimize(forAbandac){
+function _optSCaps(){return PRESETS.filter(function(p){return !p.cat&&!p.subcat&&p.n.endsWith(' S');});}
+function openOwnedSCaps(){
+  var dialog=document.getElementById('owned_s_dialog'),list=document.getElementById('owned_s_list');
+  var saved=[];
+  try{var parsed=JSON.parse(storage.get('opt_owned_s_v1')||'[]');if(Array.isArray(parsed))saved=parsed;}catch(e){}
+  list.replaceChildren();
+  _optSCaps().forEach(function(p){
+    var label=document.createElement('label'),input=document.createElement('input');
+    input.type='checkbox';input.value=p.n;input.checked=saved.indexOf(p.n)!==-1;
+    label.appendChild(input);label.appendChild(document.createTextNode(' '+p.n));list.appendChild(label);
+  });
+  document.getElementById('owned_s_error').textContent='';
+  dialog.showModal();
+}
+function setOwnedSCaps(checked){document.querySelectorAll('#owned_s_list input').forEach(function(el){el.checked=checked;});}
+function runOwnedSOptimize(){
+  var selected=Array.from(document.querySelectorAll('#owned_s_list input:checked'),function(el){return el.value;});
+  var button=document.getElementById('owned_s_run'),error=document.getElementById('owned_s_error');
+  if(button.disabled)return;
+  button.disabled=true;error.textContent='最適化中…';
+  // 状態表示を描画してから探索する。失敗時は所持設定を保存しない。
+  setTimeout(function(){
+    try{
+      if(autoOptimize(true,selected)){
+        var saved=storage.set('opt_owned_s_v1',JSON.stringify(selected));
+        document.getElementById('owned_s_dialog').close();
+        if(!saved)document.getElementById('optimize_notice').textContent+=' 所持Sの設定を保存できませんでした。次回もう一度選択してください。';
+      }
+      error.textContent='';
+    }catch(e){error.textContent='最適化できませんでした。設定を確認して再実行してください。';console.error(e);}
+    finally{button.disabled=false;}
+  },0);
+}
+function autoOptimize(forAbandac,ownedSNames){
   forAbandac=forAbandac===true;
   var wpnSel=document.querySelector('#panel_weapon .sel-wrap select');
   var wpn=WEAPONS[wpnSel?parseInt(wpnSel.value)||0:0]||WEAPONS[0];
@@ -1313,6 +1364,8 @@ function autoOptimize(forAbandac){
   var isAbandac=fixa.n==='フィクサ・アバンダク';
   if(forAbandac&&!isAbandac){alert('アバンダクとレベルを選択してください。');return;}
   if(!forAbandac&&isAbandac){alert('アバンダク選択中です。「アバンダク用最適化」を使用してください。');return;}
+  if(forAbandac&&!Array.isArray(ownedSNames)){openOwnedSCaps();return;}
+  var allowedS=new Set(forAbandac?ownedSNames:[]);
   var exNames=[];
   for(var ei=0;ei<3;ei++){var exName=getN('weapon_ex'+ei);if(exName&&exName!=='（なし）')exNames.push(exName);}
   var missingEx=3-exNames.length;
@@ -1320,7 +1373,7 @@ function autoOptimize(forAbandac){
     ?'EX能力が'+missingEx+'枠未入力です。'+(forAbandac?'未入力分はそれぞれ異なるEXを装着する想定で、異能力数に含めます。':'')+'未入力EXのステータス・条件効果は未計上です。'
     :'';
   var presetLabel=gv('fixa_sel')?fixa.n+' Lv.'+(fixaLv+1):'プリセット能力が未選択です。能力なし';
-  if(!confirm(presetLabel+'として通常OP29枠（武器5枠＋防具24枠）を最適化します。\nEX3枠は予約し、入力済みのEX・プリセット・リングは変更しません。\n'+assumption+'\n現在の通常OP構成を上書きします。よろしいですか？'))return;
+  if(!forAbandac&&!confirm(presetLabel+'として通常OP29枠（武器5枠＋防具24枠）を最適化します。\nEX3枠は予約し、入力済みのEX・プリセット・リングは変更しません。\n'+assumption+'\n現在の通常OP構成を上書きします。よろしいですか？'))return;
   var abandacRow=isAbandac?fixa.rows.find(function(row){return row.label==='_abandak';}):null;
   var abandacPerType=abandacRow?(abandacRow.vals[fixaLv]||0):0;
   var abandacBase=isAbandac?fixa.rows.reduce(function(sum,row){return sum+(row.label==='威力+'?(row.vals[fixaLv]||0):0);},0):0;
@@ -1330,6 +1383,7 @@ function autoOptimize(forAbandac){
   var referenceKeys=wt.atk==='sr'?['s','r']:wt.atk==='st'?['s','t']:['s','r','t'].indexOf(wt.atk)!==-1?[wt.atk]:['s','r','t'];
   var cands=PRESETS.filter(function(p){
     if(p.cat||p.subcat||p.n==='（なし）')return false;
+    if(forAbandac&&p.n.endsWith(' S')&&!allowedS.has(p.n))return false;
     // アバンダクでも、参照属性が一つも上がらないユーゼ・ユディは使わない。
     return !forAbandac||!_optSeries(p.n)||referenceKeys.some(function(k){return (p[k]||0)>0;});
   });
@@ -1358,13 +1412,16 @@ function autoOptimize(forAbandac){
       m.s*=(1+(p.s||0)/100);m.r*=(1+(p.r||0)/100);m.t*=(1+(p.t||0)/100);
       flMul*=(1+(p.fl||0)/100);
     });});
-    var powMul=wt.atk==='s'?m.s:wt.atk==='r'?m.r:wt.atk==='t'?m.t:wt.atk==='sr'?Math.max(m.s,m.r):wt.atk==='st'?Math.max(m.s,m.t):(m.s+m.r+m.t)/3;
-    var flFin=Math.min((wpn.fl||0)*flMul,100)/100;
-    var adj=(1-critRate)*(flFin+1)/2+critRate*critMul;
     // 排他判定は正規化名、アバンダクの種類数は実際の能力名で数える。
     var names=new Set(exNames);
     sel.forEach(function(list){list.forEach(function(p){names.add(p.n);});});
-    var typeCount=Math.min(20,names.size+missingEx);
+    return scoreStats(m,flMul,names.size);
+  }
+  function scoreStats(m,flMul,uniqueCount){
+    var powMul=wt.atk==='s'?m.s:wt.atk==='r'?m.r:wt.atk==='t'?m.t:wt.atk==='sr'?Math.max(m.s,m.r):wt.atk==='st'?Math.max(m.s,m.t):(m.s+m.r+m.t)/3;
+    var flFin=Math.min((wpn.fl||0)*flMul,100)/100;
+    var adj=(1-critRate)*(flFin+1)/2+critRate*critMul;
+    var typeCount=Math.min(20,uniqueCount+missingEx);
     var abandacMul=forAbandac?1+(abandacBase+Math.round(typeCount*abandacPerType*1000)/1000)/100:1;
     return powMul*adj*abandacMul;
   }
@@ -1455,11 +1512,60 @@ function autoOptimize(forAbandac){
 
     return {sel:sel,score:cur};
   }
+  // 1枠交換では一時的に種類数が減る変更も、2枠を同時に評価して探す。
+  // 全探索ではない。各変更は単独でも部位排他を満たす候補に限定する。
+  function improvePairs(result){
+    for(var round=0;round<20;round++){
+      var state=result.sel,baseTie=tieStats(state),counts=new Map(),m={s:fix.s,r:fix.r,t:fix.t},fl=fix.fl;
+      exNames.forEach(function(n){counts.set(n,(counts.get(n)||0)+1);});
+      state.forEach(function(list){list.forEach(function(p){
+        counts.set(p.n,(counts.get(p.n)||0)+1);
+        ['s','r','t'].forEach(function(k){m[k]*=1+(p[k]||0)/100;});fl*=1+(p.fl||0)/100;
+      });});
+      var moves=[];
+      state.forEach(function(list,gi){list.forEach(function(old,si){
+        var rest=list.filter(function(p,i){return i!==si;});
+        cands.forEach(function(p){
+          if(p.n===old.n||!canPlace(rest,p))return;
+          moves.push({gi:gi,si:si,old:old,p:p,
+            s:(1+(p.s||0)/100)/(1+(old.s||0)/100),r:(1+(p.r||0)/100)/(1+(old.r||0)/100),
+            t:(1+(p.t||0)/100)/(1+(old.t||0)/100),fl:(1+(p.fl||0)/100)/(1+(old.fl||0)/100),
+            full:fullAttributePriority(p)-fullAttributePriority(old),hpPP:(p.hp||0)+(p.pp||0)-(old.hp||0)-(old.pp||0)});
+        });
+      });});
+      var best=null,bestScore=result.score,bestTie=baseTie;
+      for(var a=0;a<moves.length;a++)for(var b=a+1;b<moves.length;b++){
+        var x=moves[a],y=moves[b];
+        if(x.gi===y.gi){
+          if(x.si===y.si)continue;
+          var pairRest=state[x.gi].filter(function(p,i){return i!==x.si&&i!==y.si;});
+          if(!canPlace(pairRest.concat([x.p]),y.p))continue;
+        }
+        var delta=new Map();
+        [x.old.n,y.old.n].forEach(function(n){delta.set(n,(delta.get(n)||0)-1);});
+        [x.p.n,y.p.n].forEach(function(n){delta.set(n,(delta.get(n)||0)+1);});
+        var unique=counts.size;
+        delta.forEach(function(d,n){var before=counts.get(n)||0;unique+=(before+d>0?1:0)-(before>0?1:0);});
+        var score=scoreStats({s:m.s*x.s*y.s,r:m.r*x.r*y.r,t:m.t*x.t*y.t},fl*x.fl*y.fl,unique);
+        var tie={full:baseTie.full+x.full+y.full,hpPP:baseTie.hpPP+x.hpPP+y.hpPP};
+        if(better(score,tie,bestScore,bestTie)){best={x:x,y:y};bestScore=score;bestTie=tie;}
+      }
+      if(!best)break;
+      var next=state.map(function(list){return list.slice();});
+      next[best.x.gi][best.x.si]=best.x.p;next[best.y.gi][best.y.si]=best.y.p;
+      // 乗数の差分評価をフル再計算で照合してから採用する。
+      var verified=evalSel(next);
+      if(!better(verified,tieStats(next),result.score,baseTie))break;
+      result=improve(next);
+    }
+    return result;
+  }
   var bestResult=improve(sel);
   if(current.every(function(list){return list!==null;})){
     var fromCurrent=improve(current);
     if(better(fromCurrent.score,tieStats(fromCurrent.sel),bestResult.score,tieStats(bestResult.sel)))bestResult=fromCurrent;
   }
+  if(forAbandac)bestResult=improvePairs(bestResult);
   sel=bestResult.sel;
   if(forAbandac){
     // 同じ能力集合を維持し、2属性版を武器へ、全属性版を防具へ移す。
@@ -1499,9 +1605,11 @@ function autoOptimize(forAbandac){
   if(notice){
     notice.style.display='block';
     notice.textContent=(forAbandac?'アバンダク用':'通常')+'の通常OP29枠を最適化しました。'
+      +(forAbandac?' 使用S系：'+(Array.from(new Set(sel.flat().filter(function(p){return p.n.endsWith(' S');}).map(function(p){return p.n;}))).join('、')||'なし')+'。':'')
       +(missingEx?'実行時：'+assumption+'暫定構成です。EX設定後に再最適化してください。表示指数は入力済みの能力のみで計算しています。':'入力済みEX3枠は維持しました。');
   }
   showMsg('OP構成を最適化しました');
+  return true;
 }
 
 // ==================== データ読込＆初期化 ====================
