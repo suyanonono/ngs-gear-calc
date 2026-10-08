@@ -44,6 +44,9 @@ async function startServer(){
     let s=await snap();near(s.tot.s,baseline.tot.s*1.0201);near(s.tot.r,baseline.tot.r*1.01);assert.equal(s.tot.hp,baseline.tot.hp+15);assert.equal(s.tot.pp,baseline.tot.pp+2);near(s.tot.dr,1-(1-baseline.tot.dr)*.99);assert.equal(s.d.index,Math.round(reference*1.0201*1.03));assert.equal(s.types,baseline.types);
     assert.equal(await page.locator('.am-preset-value').textContent(),'+3.00%');assert.equal(await page.locator('#amulet-power').count(),0);
     assert.equal(await page.locator('.am-index-head span').textContent(),'AMプリセット威力（常時）');
+    assert.match(await page.locator('#am_index_common_note').textContent(),/選択中のプリセット・レベルに応じ/);
+    assert.match(await page.locator('#am_index_calculation_note').textContent(),/全装備合計に反映済み.*再乗算しません/);
+    assert.match(await page.locator('#am_index_calculation_note').textContent(),/固有効果の説明に分けて表示/);
     const factorColors=await page.locator('#dmg_index_card .index-factor').evaluateAll(els=>els.map(el=>({type:el.className.split(' ').at(-1),width:getComputedStyle(el).borderTopWidth,color:getComputedStyle(el).borderTopColor,radius:getComputedStyle(el).borderRadius})));
     assert.deepEqual(factorColors.map(f=>f.type),['equipment','latent','fixa','ring']);
     assert.equal(new Set(factorColors.map(f=>f.color)).size,4);assert.ok(factorColors.every(f=>f.width==='1px'&&f.radius==='8px'));
@@ -58,6 +61,7 @@ async function startServer(){
     for(const id of ['am_affix_0','am_affix_1','am_affix_2'])await page.selectOption('#'+id,'pain');
     s=await snap();near(s.am.barriers['物理ダウン'],1-.9**3);near(s.tot.dr,baseline.tot.dr);assert.match(await page.locator('.am-barrier-chip').textContent(),/27.10%/);
     await page.selectOption('#am_preset','Ra');await page.locator('#am_condition').check();s=await snap();near(s.d.am,1.04*1.05);assert.equal(s.d.index,Math.round(reference*1.01*1.04*1.05));
+    assert.match(await page.locator('.am-conditional p').textContent(),/対応するメインクラス.*戦闘全体の平均値ではありません/);
     await page.evaluate(()=>doSave());const saved=s.state;
     await page.reload();await ready(page);s=await snap();assert.deepEqual(s.state.amulet,saved.amulet);assert.equal(s.d.index,Math.round(reference*1.01*1.04*1.05));
     await page.evaluate(()=>copySlot(1));await page.evaluate(()=>selectSlot(1));s=await snap();assert.deepEqual(s.state.amulet,saved.amulet);
