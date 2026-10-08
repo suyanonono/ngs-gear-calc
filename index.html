@@ -984,6 +984,7 @@ function buildDmgIndexHTML(tot){
     +'</div>'
     +'<div style="font-size:10px;font-weight:500;color:#475569;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">確定威力倍率内訳</div>'
     +'<div style="background:#151a25;border:1px solid #1e2535;border-radius:8px;padding:8px 12px;margin-bottom:10px">'
+    +'<div class="index-factor equipment">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1e2535">'
     +'<span style="font-size:11px;color:#64748b">全装備の威力（'+atkLabel+'）</span>'
     +'<span style="font-size:12px;font-weight:600;color:#a78bfa">×'+d.powMul.toFixed(4)+'</span></div>'
@@ -992,6 +993,7 @@ function buildDmgIndexHTML(tot){
     +'<input type="checkbox" onchange="setTogExCond(this)" '+(togExCond?'checked':'')+' style="width:12px;height:12px;accent-color:#e05080;cursor:pointer">EX条件付き威力上昇を有効</label>'
     +(togExCond?'<span style="font-size:11px;font-weight:600;color:#e05080">×'+d.exCond.toFixed(4)+'</span>':'<span></span>')
     +'</div>':'')
+    +'</div><div class="index-factor latent">'
     +row('武器潜在','×'+d.latentMul.toFixed(4),'#fde047')
     +(d.condLatent?'<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0 4px 12px;border-bottom:1px solid #1e2535">'
     +'<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:10px;color:'+(togLatentCond?'#fde047':'#475569')+'">'
@@ -1002,7 +1004,9 @@ function buildDmgIndexHTML(tot){
       +(d.condLatent.critDmg?'クリ威力×'+d.latentCondCritDmgMul.toFixed(4):'')
       +'</span>':'<span></span>')
     +'</div>':'')
+    +'</div><div class="index-factor fixa">'
     +row('プリセット能力（確定分）','×'+d.fixaMul.toFixed(4),'#f59e0b')
+    +'</div><div class="index-factor ring">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1e2535">'
     +'<span style="font-size:11px;color:#64748b">リングタイプ1（常時）</span>'
     +'<span style="font-size:12px;font-weight:600;color:#34d399">×'+d.ringMul.toFixed(4)+'</span></div>'
@@ -1011,7 +1015,7 @@ function buildDmgIndexHTML(tot){
     +'<input type="checkbox" onchange="setTogRingCond(this)" '+(togRingCond?'checked':'')+' style="width:12px;height:12px;accent-color:#34d399;cursor:pointer">タイプ１条件付き威力上昇を有効</label>'
     +(togRingCond?'<span style="font-size:11px;font-weight:600;color:#34d399">×'+_ringCondMul.toFixed(4)+'</span>':'<span></span>')
     +'</div>':'')
-    +buildAmuletIndexHTML(d.amulet)
+    +'</div>'+buildAmuletIndexHTML(d.amulet)
     +'<div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;margin-top:2px">'
     +'<span style="font-size:11px;color:#a78bfa88">合計</span><span style="font-size:14px;font-weight:700;color:#a78bfa">×'+d.totalPowMul.toFixed(4)+'</span></div></div>'
     +'<div style="font-size:10px;font-weight:500;color:#475569;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">クリティカル率補正</div>'

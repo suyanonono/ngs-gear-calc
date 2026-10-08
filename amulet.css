@@ -44,6 +44,16 @@ button,select,input{font-family:inherit;letter-spacing:inherit}
 .am-info-title{color:#f0abfc;margin-bottom:5px}
 .am-notice{font-size:11px;color:#94a3b8;padding:10px 12px;border-radius:8px;border:1px solid #1e2535;background:#0f1117;margin-top:14px;line-height:1.7}
 .am-index{border:1px solid #c879da55;border-radius:8px;background:#c879da0a;padding:12px;margin:8px 0}
+.index-factor{border:1px solid var(--factor-border);border-radius:8px;background:var(--factor-bg);padding:12px;margin:8px 0}
+.index-factor.equipment{--factor-color:#a78bfa;--factor-border:#7c3aed55;--factor-bg:#7c3aed0a}
+.index-factor.latent{--factor-color:#fde047;--factor-border:#fde04755;--factor-bg:#fde0470a}
+.index-factor.fixa{--factor-color:#f59e0b;--factor-border:#f59e0b55;--factor-bg:#f59e0b0a}
+.index-factor.ring{--factor-color:#34d399;--factor-border:#34d39955;--factor-bg:#34d3990a}
+.index-factor>div{gap:8px;flex-wrap:wrap}
+.index-factor>div:first-child{border-bottom:0!important;padding:0!important}
+.index-factor>div:first-child>span:first-child{color:var(--factor-color)!important}
+.index-factor>div:not(:first-child){border-top:1px solid var(--factor-border);border-bottom:0!important;margin-top:10px;padding:10px 0 0!important}
+.index-factor label{max-width:100%}
 .am-index-head{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;color:#f0abfc}
 .am-index-head strong{font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .am-conditional{margin-top:10px;padding-top:10px;border-top:1px solid #c879da55}

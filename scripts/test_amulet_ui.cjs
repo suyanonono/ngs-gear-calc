@@ -43,6 +43,10 @@ async function startServer(){
     await page.selectOption('#am_affix_0','blow');await page.selectOption('#am_affix_1','physiton');await page.selectOption('#am_affix_2','defend');
     let s=await snap();near(s.tot.s,baseline.tot.s*1.0201);near(s.tot.r,baseline.tot.r*1.01);assert.equal(s.tot.hp,baseline.tot.hp+15);assert.equal(s.tot.pp,baseline.tot.pp+2);near(s.tot.dr,1-(1-baseline.tot.dr)*.99);assert.equal(s.d.index,Math.round(reference*1.0201*1.03));assert.equal(s.types,baseline.types);
     assert.equal(await page.locator('.am-preset-value').textContent(),'+3.00%');assert.equal(await page.locator('#amulet-power').count(),0);
+    assert.equal(await page.locator('.am-index-head span').textContent(),'AMプリセット威力（常時）');
+    const factorColors=await page.locator('#dmg_index_card .index-factor').evaluateAll(els=>els.map(el=>({type:el.className.split(' ').at(-1),width:getComputedStyle(el).borderTopWidth,color:getComputedStyle(el).borderTopColor,radius:getComputedStyle(el).borderRadius})));
+    assert.deepEqual(factorColors.map(f=>f.type),['equipment','latent','fixa','ring']);
+    assert.equal(new Set(factorColors.map(f=>f.color)).size,4);assert.ok(factorColors.every(f=>f.width==='1px'&&f.radius==='8px'));
     const equipmentTotals=s.tot;
     const legacyState={...baseline.state};delete legacyState.amulet;
     assert.equal(await page.evaluate(st=>computeIndexFromState(st),legacyState),baseline.d.index,'A legacy comparison slot must not borrow current AM');
@@ -80,13 +84,27 @@ async function startServer(){
     await page.evaluate(()=>document.fonts.ready);
     assert.match(await page.locator('body').evaluate(el=>getComputedStyle(el).fontFamily),/Inter.*Noto Sans JP/);
     const out=process.env.TEST_OUTPUT_DIR||root;
-    assert.ok(fs.existsSync(out));await page.screenshot({path:path.join(out,'amulet-production-desktop.png'),fullPage:true});
+    assert.ok(fs.existsSync(out));
+    // Show all conditional controls inside their corresponding colored factor cards.
+    await page.evaluate(st=>{
+      st.ws=String(WEAPONS.findIndex(w=>w.condLatent?.critRate));
+      st.rt1=String(RING_TYPE1.findIndex(r=>r.pow?.some(p=>p[1]>0)));st.rt1lv='5';
+      st.af.weapon_ex0=EX_PRESETS.find(p=>p.condVal>0).n;
+      st.tog_ex_cond=false;st.tog_ring_cond=false;st.tog_latent_cond=false;st.amulet.condition=false;
+      applyState(st);
+    },saved);
+    const fixedTotals=(await snap()).tot;
+    for(const selector of ['.index-factor.equipment input','.index-factor.latent input','.index-factor.ring input','#am_condition']){
+      await page.locator(selector).check();assert.equal(await page.locator(selector).isChecked(),true);assert.deepEqual((await snap()).tot,fixedTotals);
+    }
+    await page.screenshot({path:path.join(out,'amulet-production-desktop.png'),fullPage:true});
+    await page.locator('#dmg_index_card').screenshot({path:path.join(out,'amulet-index-cards-desktop.png')});
     const layouts=[];
     for(const width of [320,375,390,600,768,1280]){
       await page.setViewportSize({width,height:900});
-      const info=await page.evaluate(()=>({width:innerWidth,overflow:[...document.querySelectorAll('.hdr-btn,.slot-btn,.tab-btn,#panel_amulet select,.am-summary,.am-index')].filter(el=>{const r=el.getBoundingClientRect();return r.width&&(r.left<-.5||r.right>innerWidth+.5);}).map(el=>el.id||el.className)}));
+      const info=await page.evaluate(()=>({width:innerWidth,overflow:[...document.querySelectorAll('.hdr-btn,.slot-btn,.tab-btn,#panel_amulet select,.am-summary,.am-index,.index-factor,.index-factor>div,.index-factor label')].filter(el=>{const r=el.getBoundingClientRect();return r.width&&(r.left<-.5||r.right>innerWidth+.5);}).map(el=>el.id||el.className)}));
       assert.deepEqual(info.overflow,[],JSON.stringify(info));assert.equal(await page.locator('.tab-btn.amulet').isVisible(),true);layouts.push(info);
-      if(width===375)await page.screenshot({path:path.join(out,'amulet-production-mobile.png'),fullPage:true});
+      if(width===375){await page.screenshot({path:path.join(out,'amulet-production-mobile.png'),fullPage:true});await page.locator('#dmg_index_card').screenshot({path:path.join(out,'amulet-index-cards-mobile.png')});}
     }
     assert.deepEqual(errors,[]);assert.deepEqual(badRequests,[]);
     console.log(JSON.stringify({status:'PASS',environment:live?'published':'local',checks:['original baseline preserved','legacy saves','AM factors counted once','all preset levels','duplicate potency and barriers','Ra/Te conditional toggles','persistence/reload/copy/slot isolation/reset','saved-slot AM calculation','no preset/unequipped','both optimizers preserve AM','fonts','responsive'],layouts,pageErrors:errors},null,2));

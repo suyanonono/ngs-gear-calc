@@ -74,7 +74,7 @@ function renderAmulet(am){
 }
 function buildAmuletIndexHTML(am){
   if(!am.equipped)return '';
-  return '<div class="am-index"><div class="am-index-head"><span>プリセット威力（常時）</span><strong id="am_index_preset">×'+am.presetMul.toFixed(4)+'</strong></div>'
+  return '<div class="am-index"><div class="am-index-head"><span>AMプリセット威力（常時）</span><strong id="am_index_preset">×'+am.presetMul.toFixed(4)+'</strong></div>'
     +(am.preset?.condition?'<div class="am-conditional"><label><input id="am_condition" type="checkbox" onchange="setAmuletCondition(this)" '+(am.state.condition?'checked':'')+'><span>'+amuletEscape(am.preset.trigger)+'：威力 +'+am.preset.condition+'%（'+am.preset.duration+'秒）</span></label><p>条件成立中の指数です（戦闘全体の平均ではありません）。</p></div>':'')
     +'<p class="am-index-note">PAの個別強化・ゲージ回復・シールドは指数に含めません。</p></div>';
 }
