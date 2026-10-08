@@ -14,7 +14,7 @@ function fixture(fixa=1,lv=4,exCount=0){
  WEAPON_TYPES:[{atk:'s'}],OP_PREFIXES:['エミス','ロイス','アトス','エルガ','テルフィア','テラ','ペタ'],SUFFIX_GROUPS:['ドミナ'],
  GEAR:['weapon','armor1','armor2','armor3'].map(id=>({id,isWeapon:id==='weapon'})),ALL_STATS:fields.map(k=>({k})),
  document:{querySelector:()=>({value:0}),getElementById:el},gv:id=>Number(el(id).value)||0,getN:id=>el(id+'_btn').textContent,
- calcDmgIndex:()=>({critRate:0.15,critMul:1.2}),_lastTot:{},updDupe(){},chkLim(){},calc(){},showMsg(){},
+ calcDmgIndex:()=>({critRate:0.15,critMul:1.2}),calcAmulet:()=>({s:1,r:1,t:1}),_lastTot:{},updDupe(){},chkLim(){},calc(){},showMsg(){},
  alert(s){ctx.alerted=s;},confirm(s){ctx.confirmed=s;return ctx.accept!==false;}};
  vm.createContext(ctx);vm.runInContext(fixes+normalizer+optimizer,ctx);
  el('fixa_sel').value=fixa;el('fixa_lv').value=lv;
@@ -138,3 +138,16 @@ for(const family of ['ユーゼ・','ユディ・']){
  assert.ok(cx.sel[0].some(p=>p.n.startsWith(family)&&!p.n.endsWith('バルフト')));
 }
 console.log('PASS: independent score formulas across critical/floor/level settings, duplicate EX names, and non-vacuous weapon-first dual placement.');
+
+// AM is a fixed attribute-specific multiplier, not a source of new OP types.
+for(const attr of ['s','sr','st','avg']){
+ const f=fixture(7);f.ctx.WEAPON_TYPES=[{atk:attr}];
+ const am={s:1.01,r:1.04,t:1.02};f.ctx.calcAmulet=()=>am;
+ const x=check(f,true,[]),m={...am};let fl=1;
+ for(const p of x.sel.flat()){for(const k of ['s','r','t'])m[k]*=1+(p[k]||0)/100;fl*=1+p.fl/100;}
+ const power=attr==='s'?m.s:attr==='sr'?Math.max(m.s,m.r):attr==='st'?Math.max(m.s,m.t):(m.s+m.r+m.t)/3;
+ const count=new Set(x.sel.flat().map(p=>p.n)).size;
+ const expected=power*((1-.15)*(Math.min(50*fl,100)/100+1)/2+.15*1.2)*(1+(2+Math.min(20,count+3)*.5)/100);
+ assert.ok(Math.abs(x.score-expected)<1e-10);
+}
+console.log('PASS: fixed AM multipliers in single, dual and average attribute optimizer objectives.');

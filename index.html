@@ -10,6 +10,9 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://suyanonono.github.io/ngs-gear-calc/">
 <meta property="og:image" content="https://suyanonono.github.io/ngs-gear-calc/ogp.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&amp;family=Noto+Sans+JP:wght@400..700&amp;display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{overflow-x:hidden;max-width:100%;background:#0f1117;color:#e2e8f0;font-family:sans-serif;font-size:14px;padding:.75rem;padding-bottom:60px;min-height:100vh}
@@ -136,6 +139,7 @@ html,body{overflow-x:hidden;max-width:100%;background:#0f1117;color:#e2e8f0;font
 .owned-s-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .owned-s-dialog button:disabled{opacity:.5;cursor:wait}
 </style>
+<link rel="stylesheet" href="amulet.css">
 </head>
 <body>
 <button id="back_top" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="display:none;position:fixed;bottom:20px;right:20px;z-index:9998;padding:8px 12px;border-radius:10px;border:1px solid #334155;background:#1e2535;color:#94a3b8;font-size:12px;cursor:pointer;box-shadow:0 2px 12px #00000066">▲ トップへ</button>
@@ -198,7 +202,6 @@ html,body{overflow-x:hidden;max-width:100%;background:#0f1117;color:#e2e8f0;font
 <div class="app-header">
   <div>
     <div class="app-title">PSO2NGS ステータスシミュレーター</div>
-    <div class="app-sub">スロット1〜3で構成を切替 / 保存・読込で記録 / コピーで他スロットに複製</div>
   </div>
   <div class="hdr-right">
     <div class="hdr-btns">
@@ -227,6 +230,7 @@ html,body{overflow-x:hidden;max-width:100%;background:#0f1117;color:#e2e8f0;font
 <div id="panels"></div>
 <div id="result"></div>
 
+<script src="amulet.js"></script>
 <script>
 var togSlState=false,togGearState=0,togSubSlState=false,togExCond=false,togRingCond=false,togLatentCond=false;
 var showSlotCompare=false;
@@ -489,6 +493,7 @@ function computeIndexFromState(st){
       }}
       s*=bs;r*=br;t*=bt;
     });
+    var am=calcAmulet(st.amulet||amuletDefaultState());s*=am.s;r*=am.r;t*=am.t;
     var powMul=wt.atk==='s'?s:wt.atk==='r'?r:wt.atk==='t'?t:wt.atk==='sr'?Math.max(s,r):wt.atk==='st'?Math.max(s,t):(s+r+t)/3;
     var latentMul=1+(wpn.latentPow||0)/100;
     var fixaIdx=parseInt(st.fixa||0),fixaLv=parseInt(st.fixalv||0),fixa=FIXAS[fixaIdx]||FIXAS[0];
@@ -504,7 +509,7 @@ function computeIndexFromState(st){
     var t1=RING_TYPE1[parseInt(st.rt1||0)]||RING_TYPE1[0],t1lv=parseInt(st.rt1lv||0);
     var ringPow=(t1.pow&&t1.pow.length)?(t1.pow[Math.min(t1lv,t1.pow.length-1)]||[0,0])[0]||0:0;
     var ringMul=1+ringPow/100;
-    var totalPowMul=powMul*latentMul*fixaMul*ringMul;
+    var totalPowMul=powMul*latentMul*fixaMul*ringMul*am.presetMul*am.conditionMul;
     var flBase=wpn.fl||0,flMul=1;
     GEAR.filter(function(g){return !g.isRing;}).forEach(function(g){
       for(var i=0;i<8;i++){var pid=g.id+'_af'+i,nm=st.af&&st.af[pid],p=nm?PRESETS.find(function(x){return x.n===nm;}):null;flMul*=(1+(p&&!p.cat?p.fl||0:parseFloat((st.bi&&st.bi[pid+'_fl'])||0))/100);}
@@ -756,6 +761,7 @@ function buildRingPanel(){
     +'</div></div></div>';
 }
 function buildPanel(g){
+  if(g.isAmulet)return buildAmuletPanel();
   if(g.isRing)return buildRingPanel();
   var bsts=g.isWeapon?WEAPON_BASE:ARMOR_BASE;
   var baseHTML=g.isWeapon
@@ -804,9 +810,9 @@ function buildPanel(g){
 var tabsEl,panelsEl;
 function initApp(){
   tabsEl=document.getElementById('tabs');panelsEl=document.getElementById('panels');
-  GEAR.forEach(function(g,i){
+  GEAR.concat([{id:'amulet',label:'アミュレット',isAmulet:true}]).forEach(function(g,i){
     var btn=document.createElement('button');
-    btn.className='tab-btn '+(g.isWeapon?'weapon':g.isRing?'ring':'armor')+(i===0?' active':'');
+    btn.className='tab-btn '+(g.isWeapon?'weapon':g.isRing?'ring':g.isAmulet?'amulet':'armor')+(i===0?' active':'');
     btn.textContent=g.label;
     btn.onclick=function(){
       document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');
@@ -945,7 +951,8 @@ function calcDmgIndex(tot){
   var exCond=1;
   for(var xi=0;xi<3;xi++){var xn=getN('weapon_ex'+xi);if(!xn||xn==='（なし）')continue;var xp=EX_PRESETS.find(function(x){return x.n===xn;});if(xp&&xp.condVal)exCond*=(1+xp.condVal/100);}
   _exCondMul=exCond;
-  var totalPowMul=powMul*latentMul*fixaMul*ringMul*(togExCond?exCond:1)*(togRingCond?_ringCondMul:1)*(togLatentCond?latentCondPowMul:1);
+  var am=calcAmulet(),amuletMul=am.presetMul*am.conditionMul;
+  var totalPowMul=powMul*latentMul*fixaMul*ringMul*(togExCond?exCond:1)*(togRingCond?_ringCondMul:1)*(togLatentCond?latentCondPowMul:1)*amuletMul;
   var flBase=gv('weapon_fl'),flMul=1;
   GEAR.filter(function(g){return !g.isRing;}).forEach(function(g){
     for(var i=0;i<8;i++)flMul*=(1+gv(g.id+'_af'+i+'_fl')/100);
@@ -953,7 +960,7 @@ function calcDmgIndex(tot){
   });
   var flFin=Math.min(flBase*flMul,100)/100;
   var normalCoef=(1-critRate)*(flFin+1)/2,critCoef=critRate*critMul,adjCoef=normalCoef+critCoef;
-  return{dmgIndex:Math.round(wpn.atk*totalPowMul*adjCoef),atk:wpn.atk,totalPowMul:totalPowMul,powMul:powMul,latentMul:latentMul,fixaMul:fixaMul,ringMul:ringMul,exCond:exCond,adjCoef:adjCoef,normalCoef:normalCoef,critCoef:critCoef,critRate:critRate,critMul:critMul,flFin:flFin,wt:wt,condLatent:cl,latentCondPowMul:latentCondPowMul,latentCondCritDmgMul:latentCondCritDmgMul};
+  return{dmgIndex:Math.round(wpn.atk*totalPowMul*adjCoef),atk:wpn.atk,totalPowMul:totalPowMul,powMul:powMul,latentMul:latentMul,fixaMul:fixaMul,ringMul:ringMul,exCond:exCond,adjCoef:adjCoef,normalCoef:normalCoef,critCoef:critCoef,critRate:critRate,critMul:critMul,flFin:flFin,wt:wt,condLatent:cl,latentCondPowMul:latentCondPowMul,latentCondCritDmgMul:latentCondCritDmgMul,amulet:am,amuletMul:amuletMul};
 }
 function buildDmgIndexHTML(tot){
   var d=calcDmgIndex(tot);
@@ -978,7 +985,7 @@ function buildDmgIndexHTML(tot){
     +'<div style="font-size:10px;font-weight:500;color:#475569;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">確定威力倍率内訳</div>'
     +'<div style="background:#151a25;border:1px solid #1e2535;border-radius:8px;padding:8px 12px;margin-bottom:10px">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1e2535">'
-    +'<span style="font-size:11px;color:#64748b">特殊能力・EX（'+atkLabel+'）</span>'
+    +'<span style="font-size:11px;color:#64748b">全装備の威力（'+atkLabel+'）</span>'
     +'<span style="font-size:12px;font-weight:600;color:#a78bfa">×'+d.powMul.toFixed(4)+'</span></div>'
     +(_exCondMul>1?'<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0 4px 12px;border-bottom:1px solid #1e2535">'
     +'<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:10px;color:'+(togExCond?'#e05080':'#475569')+'">'
@@ -1004,6 +1011,7 @@ function buildDmgIndexHTML(tot){
     +'<input type="checkbox" onchange="setTogRingCond(this)" '+(togRingCond?'checked':'')+' style="width:12px;height:12px;accent-color:#34d399;cursor:pointer">タイプ１条件付き威力上昇を有効</label>'
     +(togRingCond?'<span style="font-size:11px;font-weight:600;color:#34d399">×'+_ringCondMul.toFixed(4)+'</span>':'<span></span>')
     +'</div>':'')
+    +buildAmuletIndexHTML(d.amulet)
     +'<div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;margin-top:2px">'
     +'<span style="font-size:11px;color:#a78bfa88">合計</span><span style="font-size:14px;font-weight:700;color:#a78bfa">×'+d.totalPowMul.toFixed(4)+'</span></div></div>'
     +'<div style="font-size:10px;font-weight:500;color:#475569;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">クリティカル率補正</div>'
@@ -1149,6 +1157,7 @@ function buildRefHTML(totS,totR,totT){
 // ==================== メイン計算 ====================
 function calc(){
   var results=GEAR.filter(function(g){return !g.isRing;}).map(function(g){return calcGear(g);});
+  var am=calcAmulet();renderAmulet(am);results.push(am);
   var tot={};
   ['s','r','t'].forEach(function(k){tot[k]=results.reduce(function(a,r){return a*r[k];},1);});
   ['hp','pp'].forEach(function(k){tot[k]=results.reduce(function(a,r){return a+r[k];},0);});
@@ -1183,13 +1192,14 @@ function calc(){
      +'<div style="text-align:right"><div class="sp-val">'+flFin.toFixed(2)+'<span class="sp-unit">%</span></div><div class="sp-sub">= '+flBase.toFixed(2)+' × '+fmtM(flMul)+'</div></div>'
     :'<div><div class="sp-label">威力下限補正（最終値）</div><div class="sp-sub" style="color:#f87171">武器が選択されていません</div></div><div style="font-size:20px;font-weight:500;color:#334155">—</div>';
   document.getElementById('result').innerHTML=
-    '<div class="result-card"><div class="result-title">全装備合計（乗算結果）</div>'
+    '<div class="result-card"><div class="result-title">全装備合計</div>'
+    +(am.equipped?'<div class="am-rule" style="margin-bottom:12px">AM特殊能力を含む / プリセット威力は期待値指数のみ</div>':'')
     +srtHTML+subStatsHTML
     +'<div style="display:flex;flex-direction:column;gap:8px">'
     +'<div class="sp-box fl">'+flHTML+'</div>'
     +'<div class="sp-box dr"><div><div class="sp-label">ダメージ耐性（最終値）</div><div class="sp-sub">各防具・能力の乗算</div></div>'
     +'<div style="text-align:right"><div class="sp-val">'+(tot.dr*100).toFixed(2)+'<span class="sp-unit">%</span></div><div class="sp-sub">受けるダメージ割合：'+(drTaken*100).toFixed(2)+'%</div></div></div>'
-    +'</div></div>'+buildRefHTML(tot.s,tot.r,tot.t)+buildDmgIndexHTML(tot);
+    +'</div>'+buildAmuletBarriersHTML(am)+'</div>'+buildRefHTML(tot.s,tot.r,tot.t)+buildDmgIndexHTML(tot);
   updateFloatIndex(tot);
   if(showSlotCompare)renderSlotCompare();
 }
@@ -1271,9 +1281,12 @@ function collectState(){
   st.rt1=t1?t1.value:'0';st.rt2=t2?t2.value:'0';st.rt1lv=t1lv?t1lv.value:'0';st.rt2lv=t2lv?t2lv.value:'0';
   var fs=document.getElementById('fixa_sel'),fl=document.getElementById('fixa_lv');
   st.fixa=fs?fs.value:'0';st.fixalv=fl?fl.value:'0';
+  st.amulet=getAmuletState();
   return st;
 }
 function applyState(st){
+  // Old saves remain unequipped; new fields use stable string IDs.
+  restoreAmuletState(st.amulet||amuletDefaultState());
   // 旧保存データに条件トグルがない場合はOFFとして復元する。
   togExCond=!!st.tog_ex_cond;
   togRingCond=!!st.tog_ring_cond;
@@ -1304,6 +1317,7 @@ function applyState(st){
   calc();
 }
 function resetState(){
+  restoreAmuletState(amuletDefaultState());
   document.querySelectorAll('input[type="number"]').forEach(function(el){if(!el.readOnly)el.value=0;});
   document.querySelectorAll('.dd-btn').forEach(function(btn){btn.textContent='（なし）';});
   document.querySelectorAll('.affix-tbl.ex-tbl select').forEach(function(sel){sel.value='0';});
@@ -1401,6 +1415,8 @@ function autoOptimize(forAbandac,ownedSNames){
     if(!g.isWeapon)['s','r','t'].forEach(function(k){fix[k]*=(1+gv(g.id+'_'+k)/100);});
     if(g.isWeapon)for(var j2=0;j2<3;j2++){['s','r','t'].forEach(function(k){fix[k]*=(1+gv('weapon_ex'+j2+'_'+k)/100);});fix.fl*=(1+gv('weapon_ex'+j2+'_fl')/100);}
   });
+  var fixedAmulet=calcAmulet();
+  ['s','r','t'].forEach(function(k){fix[k]*=fixedAmulet[k];});
 
   // OP選択に依存しない係数(クリ率・クリ倍率・その他の定数倍率)は現在の設定から取得
   var d0=calcDmgIndex(_lastTot)||{critRate:0.15,critMul:1.2};
@@ -1624,7 +1640,8 @@ function loadData(){
     fetch(DATA_BASE+'rings.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('rings.json');return r.json();}),
     fetch(DATA_BASE+'affixes.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('affixes.json');return r.json();}),
     fetch(DATA_BASE+'ex_affixes.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('ex_affixes.json');return r.json();}),
-    fetch(DATA_BASE+'weapon_types.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('weapon_types.json');return r.json();})
+    fetch(DATA_BASE+'weapon_types.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('weapon_types.json');return r.json();}),
+    fetch(DATA_BASE+'amulets.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('amulets.json');return r.json();})
   ]).then(function(results){
     WEAPONS=results[0];
     ARMORS=results[1];
@@ -1633,6 +1650,7 @@ function loadData(){
     PRESETS=results[3];
     EX_PRESETS=results[4];
     WEAPON_TYPES=results[5];
+    AMULET_DATA=results[6];
     if(loadEl)loadEl.style.display='none';
     initApp();
   }).catch(function(err){

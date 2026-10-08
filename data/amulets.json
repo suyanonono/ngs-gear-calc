@@ -1,0 +1,197 @@
+{
+  "equipment": [
+    {
+      "id": "necklace",
+      "name": "アミュレット／ネックレス",
+      "fixedAffix": "triple"
+    }
+  ],
+  "presetPotency": [
+    1,
+    2,
+    3,
+    3.5,
+    4
+  ],
+  "presets": [
+    {
+      "id": "Hu",
+      "name": "ハンター",
+      "effect": "PB後のハンター武器PAに、3回までアヴェンジを適用。"
+    },
+    {
+      "id": "Fi",
+      "name": "ファイター",
+      "effect": "PB後の最初のリミットブレイクでシールドを獲得。エンデュランス未発動時は再使用時間を短縮。"
+    },
+    {
+      "id": "Ra",
+      "name": "レンジャー",
+      "condition": 5,
+      "duration": 20,
+      "trigger": "PB後のウィークバレット",
+      "effect": "PBでWBを補充。次のWBを強化し、リインフォース状態を付与。自身の威力も20秒間 +5%。"
+    },
+    {
+      "id": "Gu",
+      "name": "ガンナー",
+      "effect": "PB後の最初のチェイントリガーを、チェイン数 +100 から開始。"
+    },
+    {
+      "id": "Fo",
+      "name": "フォース",
+      "effect": "PB後の最初の複合テクニックで、ストック消費と再使用時間を軽減。"
+    },
+    {
+      "id": "Te",
+      "name": "テクター",
+      "condition": 3,
+      "duration": 30,
+      "trigger": "PB後のオーバーエンファシス",
+      "effect": "PB後の最初のオーバーエンファシスを強化。ストックを消費せず、シールドと自身の30秒間の威力 +3% を付与。"
+    },
+    {
+      "id": "Br",
+      "name": "ブレイバー",
+      "effect": "PB後のブレイブコンバットで、対象となるカタナ・バレットボウのPAを強化。"
+    },
+    {
+      "id": "Bo",
+      "name": "バウンサー",
+      "effect": "PB後のピニオンブレード、またはジェットインテンシティを強化。"
+    },
+    {
+      "id": "Wa",
+      "name": "ウェイカー",
+      "effect": "PBでフレドラン・ヴォルファーのゲージとマルメロの蓄積段階を増加。"
+    },
+    {
+      "id": "Sl",
+      "name": "スレイヤー",
+      "effect": "PB後の最初のアンリーシュレイジでゲージ・再使用時間を回復。命中時はギアも増加。"
+    }
+  ],
+  "affixes": [
+    {
+      "id": "triple",
+      "name": "AMトリプル",
+      "s": 1,
+      "r": 1,
+      "t": 1,
+      "effect": "打・射・法撃威力 +1.0%"
+    },
+    {
+      "id": "blow",
+      "name": "AMブロウ",
+      "s": 1,
+      "effect": "打撃威力 +1.0%"
+    },
+    {
+      "id": "shot",
+      "name": "AMショット",
+      "r": 1,
+      "effect": "射撃威力 +1.0%"
+    },
+    {
+      "id": "tech",
+      "name": "AMテック",
+      "t": 1,
+      "effect": "法撃威力 +1.0%"
+    },
+    {
+      "id": "blow-shot",
+      "name": "AMブロウショット",
+      "s": 1,
+      "r": 1,
+      "effect": "打・射撃威力 +1.0%"
+    },
+    {
+      "id": "blow-tech",
+      "name": "AMブロウテック",
+      "s": 1,
+      "t": 1,
+      "effect": "打・法撃威力 +1.0%"
+    },
+    {
+      "id": "shot-tech",
+      "name": "AMショットテック",
+      "r": 1,
+      "t": 1,
+      "effect": "射・法撃威力 +1.0%"
+    },
+    {
+      "id": "physical",
+      "name": "AMフィジカル",
+      "hp": 30,
+      "effect": "HP +30"
+    },
+    {
+      "id": "photon",
+      "name": "AMフォトン",
+      "pp": 4,
+      "effect": "PP +4"
+    },
+    {
+      "id": "physiton",
+      "name": "AMフィジトン",
+      "hp": 15,
+      "pp": 2,
+      "effect": "HP +15 / PP +2"
+    },
+    {
+      "id": "defend",
+      "name": "AMディフェンド",
+      "dr": 1,
+      "effect": "ダメージ耐性 +1.0%"
+    },
+    {
+      "id": "pain",
+      "name": "AMペインバリア",
+      "barrier": "物理ダウン",
+      "resist": 10,
+      "effect": "物理ダウン耐性 +10.0%"
+    },
+    {
+      "id": "burn",
+      "name": "AMバーンバリア",
+      "barrier": "バーン",
+      "resist": 10,
+      "effect": "バーン耐性 +10.0%"
+    },
+    {
+      "id": "freeze",
+      "name": "AMフリーズバリア",
+      "barrier": "フリーズ",
+      "resist": 10,
+      "effect": "フリーズ耐性 +10.0%"
+    },
+    {
+      "id": "shock",
+      "name": "AMショックバリア",
+      "barrier": "ショック",
+      "resist": 10,
+      "effect": "ショック耐性 +10.0%"
+    },
+    {
+      "id": "poison",
+      "name": "AMポイズンバリア",
+      "barrier": "ポイズン",
+      "resist": 10,
+      "effect": "ポイズン耐性 +10.0%"
+    },
+    {
+      "id": "mirage",
+      "name": "AMミラージュバリア",
+      "barrier": "ミラージュ",
+      "resist": 10,
+      "effect": "ミラージュ耐性 +10.0%"
+    },
+    {
+      "id": "panic",
+      "name": "AMパニックバリア",
+      "barrier": "パニック",
+      "resist": 10,
+      "effect": "パニック耐性 +10.0%"
+    }
+  ]
+}
